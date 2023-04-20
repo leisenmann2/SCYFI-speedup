@@ -1,0 +1,13 @@
+name = "SCYFI"
+uuid = "4c63adb9-a533-432e-bfa7-523684ca3f72"
+authors = ["Lukas Eisenmann"]
+version = "0.1.0"
+
+[compat]
+julia = "1.8"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
