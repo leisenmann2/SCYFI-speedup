@@ -1,5 +1,6 @@
 using LinearAlgebra
 using Random
+using Distributions
 
 """
 Matrix describing the Relu function for different quadrants(subcompartments)
