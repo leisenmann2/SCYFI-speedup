@@ -1,9 +1,5 @@
 using LinearAlgebra
 using Random
-using DataFrames
-using Plots
-using ProgressMeter
-using LaTeXStrings
 
 """
 Matrix describing the Relu function for different quadrants(subcompartments)
@@ -257,5 +253,3 @@ function get_eigvals( A::AbstractVector,
     end
     return eigvals(e) 
 end
-
-

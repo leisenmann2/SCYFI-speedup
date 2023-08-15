@@ -1,0 +1,16 @@
+module Utilities
+export construct_relu_matrix,
+    construct_relu_matrix_list,
+    construct_relu_matrix_pool,
+    get_cycle_point_candidate,
+    get_factor_in_front_of_z,
+    get_factor_in_front_of_h,
+    get_factors,
+    get_latent_time_series,
+    latent_step,
+    set_loop_iterations,
+    get_eigvals
+
+
+include("helpers.jl")
+end
