@@ -1,4 +1,4 @@
-```
+
 # Searcher for CYcles and FIxed points (SCYFI)
 We introduce a novel heuristic algorithm for detecting all fixed points and k-cycles in ReLU-based RNNs
 
@@ -80,4 +80,3 @@ These instructions will guide you through setting up the project environment and
 
 This project is licensed under the [MIT License](LICENSE) - see the [LICENSE](LICENSE) file for details.
 
-```
