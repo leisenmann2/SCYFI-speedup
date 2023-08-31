@@ -32,13 +32,14 @@ function find_cycles(
     h₂::AbstractVector,
     order:: Integer;
     outer_loop_iterations:: Union{Integer,Nothing} = nothing,
-    inner_loop_iterations:: Union{Integer,Nothing} = nothing
+    inner_loop_iterations:: Union{Integer,Nothing} = nothing,
+    get_pool_from_traj=false
     )
     found_lower_orders = Array[]
     found_eigvals = Array[]
      
     for i =1:order
-        cycles_found, eigvals = scy_fi(A, W₁, W₂, h₁, h₂, i, found_lower_orders, outer_loop_iterations=outer_loop_iterations,inner_loop_iterations=inner_loop_iterations)
+        cycles_found, eigvals = scy_fi(A, W₁, W₂, h₁, h₂, i, found_lower_orders, outer_loop_iterations=outer_loop_iterations,inner_loop_iterations=inner_loop_iterations,get_pool_from_traj=get_pool_from_traj)
      
         push!(found_lower_orders,cycles_found)
         push!(found_eigvals,eigvals)

@@ -52,7 +52,20 @@ function construct_relu_matrix_pool(A:: Array, W1:: Array, W2:: Array, h1::Array
     return D_list
 end
 
-
+"""
+Initialise pool of admissable Relu matrices for a specific shallow PLRNN by drawing trajectories and storing the visited regions
+"""
+function construct_relu_matrix_pool_traj(A:: Array, W₁:: Array, W₂:: Array, h₁::Array, h₂::Array,dim::Integer, hidden_dim::Integer)
+    trajectory_relu_matrix_list = Array{Bool}(undef, hidden_dim, hidden_dim, 1000100)
+    for i =0:10000
+        z_0=rand(Uniform(-10,10),dim)
+        trajectory = get_latent_time_series(100, A, W₁, W₂, h₁, h₂, dim, z_0=z_0)
+        for j = 1:100
+            trajectory_relu_matrix_list[:,:,i*j+j] = Diagonal((W₂*trajectory[j] + h₂).>0)                       # get relu matrices of the candidate
+        end
+    end
+    return unique(trajectory_relu_matrix_list,dims=3)
+end
 
 """
 # Construct a list of relu matrices for a random sequence of quadrants faster version
