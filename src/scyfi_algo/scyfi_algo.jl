@@ -167,20 +167,24 @@ function scy_fi(
     i = -1
     while i < outer_loop_iterations # This loop can be viewed as (re-)initialization of the algo in some set of linear regions
         i += 1
-        relu_matrix_list = construct_relu_matrix_list(relu_pool, order)     # generate random set of linear regions from pool to start from
+        relu_matrix_list_1 = construct_relu_matrix_list(relu_pool, order)     # generate random set of linear regions from pool to start from
+        relu_matrix_list_2 = relu_matrix_list_1                                # initialise the two sets the same
         difference_relu_matrices = 1                                        # flag that indiates wheter the initilized relu matrices are the same as the candidate matrices
         c = 0
         while c < inner_loop_iterations
             c += 1
-            z_candidate = get_cycle_point_candidate(A, W₁, W₂, h₁, h₂, relu_matrix_list, order)
+            z_candidate = get_cycle_point_candidate(A, W₁, W₂, h₁, h₂, relu_matrix_list_1, relu_matrix_list_2, order)
             if z_candidate !== nothing
                 trajectory = get_latent_time_series(order, A, W₁, W₂, h₁, h₂, latent_dim, z_0=z_candidate)
-                trajectory_relu_matrix_list = Array{Bool}(undef, hidden_dim, hidden_dim, order)
+                trajectory_relu_matrix_list_1 = Array{Bool}(undef, hidden_dim, hidden_dim, order)
+                trajectory_relu_matrix_list_2 = Array{Bool}(undef, hidden_dim, hidden_dim, order)
                 for j = 1:order
-                    trajectory_relu_matrix_list[:,:,j] = Diagonal((W₂*trajectory[j] + h₂).>0)                       # get relu matrices of the candidate
+                    trajectory_relu_matrix_list_1[:,:,j] = Diagonal((W₂*trajectory[j] + h₂).>0)                       # get relu matrices of the candidate
+                    trajectory_relu_matrix_list_2[:,:,j] = Diagonal((W₂*trajectory[j]).>0)                       # get relu matrices of the candidate
                 end
                 for j = 1:order
-                    difference_relu_matrices = sum(abs.(trajectory_relu_matrix_list[:,:,j].-relu_matrix_list[:,:,j])) # check if cycle candidate lies in the same linear regions as the initialization
+                    difference_relu_matrices = sum(abs.(trajectory_relu_matrix_list_1[:,:,j].-relu_matrix_list_1[:,:,j])) # check if cycle candidate lies in the same linear regions as the initialization
+                    difference_relu_matrices += sum(abs.(trajectory_relu_matrix_list_2[:,:,j].-relu_matrix_list_2[:,:,j]))
                     if difference_relu_matrices != 0
                         break
                     end
@@ -200,13 +204,16 @@ function scy_fi(
                         c=0
                     end
                 end
-                if relu_matrix_list == trajectory_relu_matrix_list
-                    relu_matrix_list = construct_relu_matrix_list(relu_pool, order)
+                if relu_matrix_list_1 == trajectory_relu_matrix_list_1 && relu_matrix_list_2 == trajectory_relu_matrix_list_2
+                    relu_matrix_list_1 = construct_relu_matrix_list(relu_pool, order)
+                    relu_matrix_list_2 =relu_matrix_list_1
                 else
-                    relu_matrix_list = trajectory_relu_matrix_list  # if we did not find a real cycle use the regions of the virtual cycle to recalculate 
+                    relu_matrix_list_1 = trajectory_relu_matrix_list_1  # if we did not find a real cycle use the regions of the virtual cycle to recalculate 
+                    relu_matrix_list_2 = trajectory_relu_matrix_list_2
                 end
             else
-                relu_matrix_list = construct_relu_matrix_list(relu_pool, order)
+                relu_matrix_list_1 = construct_relu_matrix_list(relu_pool, order)
+                relu_matrix_list_2 =relu_matrix_list_1
             end 
         end
     end
