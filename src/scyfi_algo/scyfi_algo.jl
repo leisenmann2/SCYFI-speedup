@@ -75,7 +75,8 @@ function scy_fi(
     h₁::AbstractVector,
     h₂::AbstractVector,
     order:: Integer,
-    found_lower_orders:: Array;
+    found_lower_orders:: Array,
+    relu_pool:: Array;
     outer_loop_iterations:: Union{Integer,Nothing} = nothing,
     inner_loop_iterations:: Union{Integer,Nothing} = nothing,
     PLRNN::Union{Nothing,AbstractPLRNN} = ShallowPLRNN
@@ -86,9 +87,8 @@ function scy_fi(
     cycles_found = Array[]
     eigvals =  Array[]
     outer_loop_iterations, inner_loop_iterations = set_loop_iterations(order, outer_loop_iterations, inner_loop_iterations)
-    # create pool of allowed D matrices, in the shPLRNN there are overlapping regions which can be excluded, this makes the algorithm more efficient
-    relu_pool=construct_relu_matrix_pool(A, W₁, W₂, h₁, h₂, size(A)[1],hidden_dim)
-    println("Number of initialisations in Pool: ", size(relu_pool)[3])
+ 
+    #println("Number of initialisations in Pool: ", size(relu_pool)[3])
     i = -1
     while i < outer_loop_iterations # This loop can be viewed as (re-)initialization of the algo in some set of linear regions
         i += 1
