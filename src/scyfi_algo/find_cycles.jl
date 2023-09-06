@@ -43,7 +43,7 @@ function find_cycles(
     relu_pool=construct_relu_matrix_pool(A, W₁, W₂, h₁, h₂, size(A)[1],size(h₂)[1])
      
     for i =1:order
-        cycles_found, eigvals = scy_fi(A, W₁, W₂, h₁, h₂, i, found_lower_orders, relu_pool, outer_loop_iterations=outer_loop_iterations,inner_loop_iterations=inner_loop_iterations,PLRNN=PLRNN)
+        cycles_found, eigvals = scy_fi(A, W₁, W₂, h₁, h₂, i, found_lower_orders, relu_pool,PLRNN, outer_loop_iterations=outer_loop_iterations,inner_loop_iterations=inner_loop_iterations)
      
         push!(found_lower_orders,cycles_found)
         push!(found_eigvals,eigvals)
