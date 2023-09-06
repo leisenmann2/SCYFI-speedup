@@ -26,8 +26,13 @@ end
 Construct a list of relu matrices for a random sequence of quadrants drawn from the allowed D's of the pool
 shPLRNN
 """
-function construct_relu_matrix_list(relu_pool:: Array, order::Integer)
-    return relu_pool[:,:,rand(1:size(relu_pool)[3],order)]   
+function construct_relu_matrix_list(relu_pool:: Array, order::Integer,is_clipped::Bool=false)
+    if is_clipped
+        # TODO: if clipped we need two sets of D which are related by h2 i guess; then we do not need the flag and can have different functions
+        return nothing
+    else
+        return relu_pool[:,:,rand(1:size(relu_pool)[3],order)]  
+    end 
 end
 
 
@@ -35,6 +40,7 @@ end
 Initialise pool of admissable Relu matrices for the shallow PLRNN
 """
 function construct_relu_matrix_pool(A:: Array, W1:: Array, W2:: Array, h1::Array, h2::Array,dim::Integer, hidden_dim::Integer)
+    #TODO does this change for the clipped shallow??
     # credit @Niclas Goering
     n_points=10000000
     corr=Matrix{Int64}(undef,n_points,hidden_dim)
@@ -90,17 +96,22 @@ function get_cycle_point_candidate( A::AbstractVector,
     h₁::AbstractVector,
     h₂::AbstractVector,
     D_list:: Array,
-    order::Integer)
-
-    z_factor, h₁_factor, h₂_factor = get_factors(A, W₁, W₂, D_list, order)
-    z_candidate = nothing
-    try
-        inverse_matrix = inv(I-z_factor)
-        z_candidate = inverse_matrix *(h₁_factor*h₁ + h₂_factor*h₂)
-    catch
-        #Not invertible?
+    order::Integer,
+    is_clipped::Bool=false)
+    if is_clipped
+        #TODO: Implement
+        return nothing
+    else
+        z_factor, h₁_factor, h₂_factor = get_factors(A, W₁, W₂, D_list, order)
+        z_candidate = nothing
+        try
+            inverse_matrix = inv(I-z_factor)
+            z_candidate = inverse_matrix *(h₁_factor*h₁ + h₂_factor*h₂)
+        catch
+            #Not invertible?
+        end
+        return z_candidate #, z_factor
     end
-    return z_candidate #, z_factor
 end
 
 
@@ -132,19 +143,29 @@ end
 Here we want to calculate the factors in front of z/h_1/h_2 recursively
 shPLRNN
 """
-function get_factors(A::AbstractVector, W₁::AbstractMatrix, W₂::AbstractMatrix, D_list::Array, order::Integer)
-    hidden_dim = size(W₂)[1]
-    latent_dim = size(W₁)[1]
-    factor_z = I#Matrix(I,latent_dim,latent_dim)
-    factor_h₁ = I#Matrix(I,latent_dim,latent_dim)
-    factor_h₂ = W₁*D_list[:,:,1]*I#*Matrix(I,hidden_dim, hidden_dim)
-    for i = 1:order-1
-        factor_z = (Diagonal(A) + (W₁*D_list[:,:,i])*W₂)*factor_z
-        factor_h₁ = (Diagonal(A) + (W₁*D_list[:,:,i+1])*W₂)*factor_h₁ + I
-        factor_h₂ = (Diagonal(A) + (W₁*D_list[:,:,i+1])*W₂)*factor_h₂ + (W₁*D_list[:,:,i+1])
+function get_factors(A::AbstractVector,
+    W₁::AbstractMatrix,
+    W₂::AbstractMatrix, 
+    D_list::Array, 
+    order::Integer,
+    is_clipped::Bool=false)
+    if is_clipped
+        #TODO: implement
+        return nothing
+    else
+        hidden_dim = size(W₂)[1]
+        latent_dim = size(W₁)[1]
+        factor_z = I#Matrix(I,latent_dim,latent_dim)
+        factor_h₁ = I#Matrix(I,latent_dim,latent_dim)
+        factor_h₂ = W₁*D_list[:,:,1]*I#*Matrix(I,hidden_dim, hidden_dim)
+        for i = 1:order-1
+            factor_z = (Diagonal(A) + (W₁*D_list[:,:,i])*W₂)*factor_z
+            factor_h₁ = (Diagonal(A) + (W₁*D_list[:,:,i+1])*W₂)*factor_h₁ + I
+            factor_h₂ = (Diagonal(A) + (W₁*D_list[:,:,i+1])*W₂)*factor_h₂ + (W₁*D_list[:,:,i+1])
+        end
+        factor_z = (Diagonal(A) + (W₁*D_list[:,:,order])*W₂)*factor_z
+        return factor_z, factor_h₁, factor_h₂
     end
-    factor_z = (Diagonal(A) + (W₁*D_list[:,:,order])*W₂)*factor_z
-    return factor_z, factor_h₁, factor_h₂
 end
 
 
@@ -177,7 +198,8 @@ function get_latent_time_series(time_steps:: Integer,
     h₁::AbstractVector,
     h₂::AbstractVector,
     dz::Integer;
-    z_0:: Array= nothing)
+    z_0:: Array= nothing,
+    is_clipped::Bool=false)
     if z_0 === nothing
         z = transpose(randn(1,dz))
     else
@@ -186,7 +208,7 @@ function get_latent_time_series(time_steps:: Integer,
     trajectory = Array{Array}(undef, time_steps)
     trajectory[1] = z
     for t = 2:time_steps
-        z = latent_step(z, A, W₁, W₂, h₁, h₂)
+        z = latent_step(z, A, W₁, W₂, h₁, h₂, is_clipped)
         trajectory[t] = z
     end
     return trajectory
@@ -209,9 +231,15 @@ function  latent_step(
     W₁::AbstractMatrix,
     W₂::AbstractMatrix,
     h₁::AbstractVector,
-    h₂::AbstractVector,)
-    return A .* z .+ W₁ * max.(W₂ * z .+ h₂,0) .+ h₁
+    h₂::AbstractVector,
+    is_clipped::Bool=false)
+    if is_clipped
+        return A .* z .+ W₁ * (max.(W₂ * z .+ h₂,0) .- max.(W₂ * z)) .+ h₁
+    else
+        return A .* z .+ W₁ * max.(W₂ * z .+ h₂,0) .+ h₁
+    end
 end
+
 
 
 """
@@ -247,10 +275,16 @@ function get_eigvals( A::AbstractVector,
     W₁::AbstractMatrix,
     W₂::AbstractMatrix, 
     D_list:: Array, 
-    order::Integer)
-    e = I
-    for i = 1:order
-        e = (Diagonal(A) + (W₁ * D_list[:,:,i] * W₂)) * e
+    order::Integer,
+    is_clipped::Bool=false)
+    if is_clipped
+        # TODO: Implement
+        return nothing
+    else
+        e = I
+        for i = 1:order
+            e = (Diagonal(A) + (W₁ * D_list[:,:,i] * W₂)) * e
+        end
+        return eigvals(e) 
     end
-    return eigvals(e) 
 end

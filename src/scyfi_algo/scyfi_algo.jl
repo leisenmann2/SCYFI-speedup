@@ -77,8 +77,10 @@ function scy_fi(
     order:: Integer,
     found_lower_orders:: Array;
     outer_loop_iterations:: Union{Integer,Nothing} = nothing,
-    inner_loop_iterations:: Union{Integer,Nothing} = nothing
+    inner_loop_iterations:: Union{Integer,Nothing} = nothing,
+    PLRNN::Union{Nothing,AbstractPLRNN} = ShallowPLRNN
      )
+    
     latent_dim = size(A)[1]
     hidden_dim = size(h₂)[1]
     cycles_found = Array[]

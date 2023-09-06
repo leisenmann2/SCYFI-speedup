@@ -6,11 +6,13 @@ calculate the cycles for a specified PLRNN with parameters A,W,h up until order 
 function find_cycles(
     A:: Array, W:: Array, h:: Array, order:: Integer;
     outer_loop_iterations:: Union{Integer,Nothing}= nothing,
-    inner_loop_iterations:: Union{Integer,Nothing} = nothing
-     )
+    inner_loop_iterations:: Union{Integer,Nothing} = nothing,
+    PLRNN:: Union{VanillaPLRNN,Nothing} = VanillaPLRNN()
+    )
+    
     found_lower_orders = Array[]
     found_eigvals = Array[]
-     
+    #plrnn=PLRNN
     for i =1:order
         cycles_found, eigvals = scy_fi(A, W, h, i, found_lower_orders, outer_loop_iterations=outer_loop_iterations,inner_loop_iterations=inner_loop_iterations)
      
@@ -32,13 +34,14 @@ function find_cycles(
     h₂::AbstractVector,
     order:: Integer;
     outer_loop_iterations:: Union{Integer,Nothing} = nothing,
-    inner_loop_iterations:: Union{Integer,Nothing} = nothing
+    inner_loop_iterations:: Union{Integer,Nothing} = nothing,
+    PLRNN:: Union{AbstractPLRNN,Nothing} = ShallowPLRNN()
     )
     found_lower_orders = Array[]
     found_eigvals = Array[]
      
     for i =1:order
-        cycles_found, eigvals = scy_fi(A, W₁, W₂, h₁, h₂, i, found_lower_orders, outer_loop_iterations=outer_loop_iterations,inner_loop_iterations=inner_loop_iterations)
+        cycles_found, eigvals = scy_fi(A, W₁, W₂, h₁, h₂, i, found_lower_orders, outer_loop_iterations=outer_loop_iterations,inner_loop_iterations=inner_loop_iterations,PLRNN=PLRNN)
      
         push!(found_lower_orders,cycles_found)
         push!(found_eigvals,eigvals)
