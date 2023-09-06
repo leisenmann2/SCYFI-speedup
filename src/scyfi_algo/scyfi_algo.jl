@@ -175,7 +175,7 @@ function scy_fi(
             c += 1
             z_candidate = get_cycle_point_candidate(A, W₁, W₂, h₁, h₂, relu_matrix_list_1, relu_matrix_list_2, order)
             if z_candidate !== nothing
-                trajectory = get_latent_time_series(order, A, W₁, W₂, h₁, h₂, latent_dim, z_0=z_candidate)
+                trajectory = get_latent_time_series(order, A, W₁, W₂, h₁, h₂, latent_dim, z_0=z_candidate, is_clipped=true)
                 trajectory_relu_matrix_list_1 = Array{Bool}(undef, hidden_dim, hidden_dim, order)
                 trajectory_relu_matrix_list_2 = Array{Bool}(undef, hidden_dim, hidden_dim, order)
                 for j = 1:order
@@ -197,7 +197,7 @@ function scy_fi(
                 end
                 if difference_relu_matrices == 0    # if the linear regions match check if we already found that cycle
                     if map(temp1 -> round.(temp1, digits=2), trajectory[1]) ∉ map(temp -> round.(temp, digits=2), collect(Iterators.flatten(cycles_found)))
-                        e = get_eigvals(A, W₁, W₂, relu_matrix_list, order)
+                        e = get_eigvals(A, W₁, W₂, relu_matrix_list_1, relu_matrix_list_2, order)
                         push!(cycles_found,trajectory)
                         push!(eigvals,e)
                         i=0
