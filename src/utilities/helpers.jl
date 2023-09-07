@@ -277,7 +277,7 @@ function  latent_step(
     h₂::AbstractVector,
     is_clipped::Bool=false)
     if is_clipped
-        return A .* z .+ W₁ * (max.(W₂ * z .+ h₂,0) .- max.(W₂ * z)) .+ h₁
+        return A .* z .+ W₁ * (max.(W₂ * z .+ h₂,0) .- max.(W₂ * z, 0)) .+ h₁
     else
         return A .* z .+ W₁ * max.(W₂ * z .+ h₂,0) .+ h₁
     end
