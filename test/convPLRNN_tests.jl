@@ -283,7 +283,7 @@ function test_finding_65_cycle_2D()
     h = [h1, h2]
     dz = 2
     k = 65
-    FPs,eigvals = find_cycles(A, W, h,k,outer_loop_iterations=30,inner_loop_iterations=70)
+    FPs,eigvals = find_cycles(A, W, h,k,outer_loop_iterations=30,inner_loop_iterations=100)
     #println(FPs[31])
     @test length(FPs[65]) == 2
 end
@@ -324,7 +324,7 @@ function test_finding_80_cycle_2D()
     h = [h1, h2]
     dz = 2
     k = 80
-    FPs,eigvals = find_cycles(A, W, h,k,outer_loop_iterations=30,inner_loop_iterations=120)
+    FPs,eigvals = find_cycles(A, W, h,k,outer_loop_iterations=30,inner_loop_iterations=130)
     #println(FPs[31])
     @test length(FPs[80]) == 2
 end

@@ -172,9 +172,9 @@ function get_factors(A::AbstractVector,
    )
     hidden_dim = size(W₂)[1]
     latent_dim = size(W₁)[1]
-    factor_z = I#Matrix(I,latent_dim,latent_dim)
-    factor_h₁ = I#Matrix(I,latent_dim,latent_dim)
-    factor_h₂ = W₁*D_list[:,:,1]*I#*Matrix(I,hidden_dim, hidden_dim)
+    factor_z = I
+    factor_h₁ = I
+    factor_h₂ = W₁*D_list[:,:,1]*I
     for i = 1:order-1
         factor_z = (Diagonal(A) + (W₁*D_list[:,:,i])*W₂)*factor_z
         factor_h₁ = (Diagonal(A) + (W₁*D_list[:,:,i+1])*W₂)*factor_h₁ + I
@@ -196,15 +196,14 @@ function get_factors(A::AbstractVector,
     D_list_2::Array,
     order::Integer,
    )
-   #TODO: check
     hidden_dim = size(W₂)[1]
     latent_dim = size(W₁)[1]
-    factor_z = I#Matrix(I,latent_dim,latent_dim)
-    factor_h₁ = I#Matrix(I,latent_dim,latent_dim)
-    factor_h₂ = W₁*D_list_1[:,:,1]*I#*Matrix(I,hidden_dim, hidden_dim)
+    factor_z = I
+    factor_h₁ = I
+    factor_h₂ = W₁*D_list_1[:,:,1]*I
     for i = 1:order-1
         factor_z = (Diagonal(A) + (W₁*D_list_1[:,:,i])*W₂ - (W₁*D_list_2[:,:,i])*W₂)*factor_z
-        factor_h₁ = (Diagonal(A) + (W₁*D_list_1[:,:,i+1])*W₂ - (W₁*D_list_2[:,:,i])*W₂ )*factor_h₁ + I
+        factor_h₁ = (Diagonal(A) + (W₁*D_list_1[:,:,i+1])*W₂ - (W₁*D_list_2[:,:,i])*W₂ ) *factor_h₁ + I
         factor_h₂ = (Diagonal(A) + (W₁*D_list_1[:,:,i+1])*W₂ - (W₁*D_list_2[:,:,i])*W₂ )*factor_h₂ + (W₁*D_list_1[:,:,i+1])
     end
     factor_z = (Diagonal(A) + (W₁*D_list_1[:,:,order])*W₂- (W₁*D_list_2[:,:,order])*W₂)*factor_z
@@ -342,7 +341,6 @@ function get_eigvals( A::AbstractVector,
     D_list_2:: Array,
     order::Integer,
     )
-    #TODO: check
     e = I
     for i = 1:order
         e = (Diagonal(A) + (W₁ * D_list_1[:,:,i] * W₂)-(W₁ * D_list_2[:,:,i] * W₂)) * e
