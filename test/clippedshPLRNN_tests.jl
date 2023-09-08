@@ -4,40 +4,40 @@ using LinearAlgebra
 using Plots
 
 #randomly generate sys
-M=2
-H=10
-A=randn(M)
-W₁=randn(M,H)
-#W₁ =W₁-Diagonal(W₁)
-W₂=randn(H,M)
-#W₂ =W₂-diagm(diag(W₂))
-h₁=randn(M)
-h₂=randn(H)
-p=plot(xlims=(-100,100),ylims=(-100,100),legend=false)
-for k=1:200
-    traj= get_latent_time_series(10000,A,W₁,W₂,h₁,h₂,M, z_0=randn(M), is_clipped=true)
-    traj=reshape(collect(Iterators.flatten(traj)), (length(traj[1]),length(traj)))
-    #println(size(traj[2][2]))
-    #println(traj[1,end-10:end])
-    Plots.plot!(p,traj[1,end-100:end],traj[2,end-100:end],label="k=$k",marker=:circle)
-end
-display(p)
+# M=2
+# H=10
+# A=randn(M)
+# W₁=randn(M,H)
+# #W₁ =W₁-Diagonal(W₁)
+# W₂=randn(H,M)
+# #W₂ =W₂-diagm(diag(W₂))
+# h₁=randn(M)
+# h₂=randn(H)
+# p=plot(xlims=(-100,100),ylims=(-100,100),legend=false)
+# for k=1:200
+#     traj= get_latent_time_series(10000,A,W₁,W₂,h₁,h₂,M, z_0=randn(M), is_clipped=true)
+#     traj=reshape(collect(Iterators.flatten(traj)), (length(traj[1]),length(traj)))
+#     #println(size(traj[2][2]))
+#     #println(traj[1,end-10:end])
+#     Plots.plot!(p,traj[1,end-100:end],traj[2,end-100:end],label="k=$k",marker=:circle)
+# end
+# display(p)
 
 #Plots.plot(p,traj[1,begin:20],traj[2,begin:20])
 #plott the first vs the second entries in trajfor all entries
 #reshape(Array(traj),10000,2)
-println(traj[1,:])
+#println(traj[1,:])
 #reshape(collect(Iterators.flatten(a)), (length(a[1]),length(a)))
-plot!(p,xlims=(-5,5),ylims=(-5,5),legend=false)
-cycles, eigenvals =find_cycles(A, W₁,W₂, h₁,h₂,2,outer_loop_iterations=100,inner_loop_iterations=250,PLRNN=ClippedShallowPLRNN())
-println(cycles)#[1][3][1])
-Plots.scatter!(p,[cycles[2][1][2][1]],[cycles[2][1][2][2]],label="cycle",marker=:cross,markersize=10,color="red")#,xlims=(-10,10),ylims=(-10,10),color=:red)
+#plot!(p,xlims=(-5,5),ylims=(-5,5),legend=false)
+#cycles, eigenvals =find_cycles(A, W₁,W₂, h₁,h₂,2,outer_loop_iterations=100,inner_loop_iterations=250,PLRNN=ClippedShallowPLRNN())
+#println(cycles)#[1][3][1])
+###Plots.scatter!(p,[cycles[2][1][2][1]],[cycles[2][1][2][2]],label="cycle",marker=:cross,markersize=10,color="red")#,xlims=(-10,10),ylims=(-10,10),color=:red)
 
-println(A)
-println(W₁)
-println(W₂)
-println(h₁)
-println(h₂)
+#println(A)
+#println(W₁)
+#println(W₂)
+#println(h₁)
+#println(h₂)
 
 function test_finding_1_cycle_M2_H10_clipped()
     # define variables for GT sys with 1 cycle if
@@ -52,7 +52,7 @@ function test_finding_1_cycle_M2_H10_clipped()
     @test round.(FPs[1][1][1],digits=3)==round.(traj[:,end],digits=3)	
     @test length(FPs[1][1]) == 1
 end
-test_finding_1_cycle_M2_H10_clipped()
+#test_finding_1_cycle_M2_H10_clipped()
 
 function test_finding_1_cycle_M2_H10_clipped2()
     A=[-0.06419553876846194, -0.2622863003398774]
@@ -67,21 +67,29 @@ function test_finding_1_cycle_M2_H10_clipped2()
     @test round.(FPs[1][1][1],digits=3)==round.(traj[:,end],digits=3)	
     @test length(FPs[1][1]) == 1
 end
-test_finding_1_cycle_M2_H10_clipped2()
+#test_finding_1_cycle_M2_H10_clipped2()
 
 #println(FPs[1][1][1])
-#round.(FPs[1][1][1],digits=3)==round.(traj[:,end],digits=3)	
-A=[-0.387934780653102, 0.5123045746686165]
-W₁=[-0.9572042035845127 -0.1830689421517754 0.612724219548259 0.5072123624933069 -2.93833010824187 -0.7166910570852257 0.09483144567532248 0.3275011463581499 -0.596729272294966 0.21833363030454014; 0.11252030787955322 0.08361706357908519 -0.1883799922944963 0.11798518366934412 2.214442358271848 0.5048710768032438 0.6530100515570298 0.3616554430766955 0.17756613771012567 0.1607826194696379]
-W₂=[0.03312283756823697 1.8839667964477298; -1.8645741228197934 -0.343038769506633; 0.32178514086049653 -0.6546290047717681; -1.7138058159480039 -2.170483207993156; 1.0357378202180176 2.679592104175041; 0.8326308548714895 0.60488813592394; 0.11291096347254374 -0.12185732820579509; 0.8078735346646678 1.2608387934459058; 0.6370601193078352 0.8861459726379051; -0.665435960662722 0.08213441509969478]
-h₁=[-0.577277965780346, -2.009240385851437]
-h₂=[0.8614300380448116, -1.2928727603452919, 0.04562658977737302, -0.24653003991713363, -0.14907612939827858, 1.6511523265499823, 1.3836150637812514, -0.11713937751742667, 0.8566129911695514, 1.5013701728321438]
-traj= get_latent_time_series(10000,A,W₁,W₂,h₁,h₂,M, z_0=randn(M), is_clipped=true)
-traj=reshape(collect(Iterators.flatten(traj)), (length(traj[1]),length(traj)))
+#round.(FPs[1][1][1],digits=3)==round.(traj[:,end],digits=3)
+function test_finding_2_cycle_M2_H10_clipped_val()	
+    A=[-0.387934780653102, 0.5123045746686165]
+    W₁=[-0.9572042035845127 -0.1830689421517754 0.612724219548259 0.5072123624933069 -2.93833010824187 -0.7166910570852257 0.09483144567532248 0.3275011463581499 -0.596729272294966 0.21833363030454014; 0.11252030787955322 0.08361706357908519 -0.1883799922944963 0.11798518366934412 2.214442358271848 0.5048710768032438 0.6530100515570298 0.3616554430766955 0.17756613771012567 0.1607826194696379]
+    W₂=[0.03312283756823697 1.8839667964477298; -1.8645741228197934 -0.343038769506633; 0.32178514086049653 -0.6546290047717681; -1.7138058159480039 -2.170483207993156; 1.0357378202180176 2.679592104175041; 0.8326308548714895 0.60488813592394; 0.11291096347254374 -0.12185732820579509; 0.8078735346646678 1.2608387934459058; 0.6370601193078352 0.8861459726379051; -0.665435960662722 0.08213441509969478]
+    h₁=[-0.577277965780346, -2.009240385851437]
+    h₂=[0.8614300380448116, -1.2928727603452919, 0.04562658977737302, -0.24653003991713363, -0.14907612939827858, 1.6511523265499823, 1.3836150637812514, -0.11713937751742667, 0.8566129911695514, 1.5013701728321438]
+    traj= get_latent_time_series(10000,A,W₁,W₂,h₁,h₂,M, z_0=randn(M), is_clipped=true)
+    traj=reshape(collect(Iterators.flatten(traj)), (length(traj[1]),length(traj)))
 
-FPs,eigenvals =find_cycles(A, W₁,W₂, h₁,h₂,2,outer_loop_iterations=10,inner_loop_iterations=20,PLRNN=ClippedShallowPLRNN())
-traj
-FPs
-round.(FPs[2][1][1],digits=3)
-round.(traj[end,:],digits=3)	
-round.(FPs[2][1][1],digits=3)==round.(traj[:,end],digits=3)	
+    FPs,eigenvals =find_cycles(A, W₁,W₂, h₁,h₂,2,outer_loop_iterations=10,inner_loop_iterations=20,PLRNN=ClippedShallowPLRNN())
+    @test length(FPs[2]) == 1
+    @test round.(FPs[2][1][1][1],digits=3) ∈ round.(traj[:,end-1:end],digits=3)	
+
+end
+#test_finding_1_cycle_M2_H10_clipped()
+
+# FPs
+# traj[:,end-2:end]
+# FPs
+# round.(FPs[2][1][1],digits=3)
+# round.(traj[end,:],digits=3)	
+# round.(FPs[2][1][1],digits=3)==round.(traj[:,end],digits=3)	

@@ -2,6 +2,7 @@ using SCYFI
 using Test
 include("./convPLRNN_tests.jl")
 include("./shPLRNN_tests.jl")
+include("./clippedshPLRNN_tests.jl")
 
 @testset "SCYFI.jl" begin 
     #conv PLRNN
@@ -32,4 +33,9 @@ include("./shPLRNN_tests.jl")
     test_finding_1_cycle_M2_H10_val()
     test_finding_2_cycle_4_cycle_M2_H10()
     test_finding_2_cycle_4_cycle_M2_H10_nothing()
+
+    #clippedshPLRNN
+    test_finding_1_cycle_M2_H10_clipped()
+    test_finding_1_cycle_M2_H10_clipped()
+    test_finding_2_cycle_M2_H10_clipped_val()
 end
