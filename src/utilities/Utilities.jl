@@ -9,8 +9,13 @@ export construct_relu_matrix,
     get_latent_time_series,
     latent_step,
     set_loop_iterations,
-    get_eigvals
+    get_eigvals,
+    AbstractPLRNN,
+    VanillaPLRNN,
+    ShallowPLRNN,
+    ClippedShallowPLRNN
 
 
 include("helpers.jl")
+include("PLRNNS.jl")
 end
