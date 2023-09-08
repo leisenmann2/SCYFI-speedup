@@ -203,8 +203,8 @@ function get_factors(A::AbstractVector,
     factor_h₂ = W₁*D_list_1[:,:,1]*I
     for i = 1:order-1
         factor_z = (Diagonal(A) + (W₁*D_list_1[:,:,i])*W₂ - (W₁*D_list_2[:,:,i])*W₂)*factor_z
-        factor_h₁ = (Diagonal(A) + (W₁*D_list_1[:,:,i+1])*W₂ - (W₁*D_list_2[:,:,i])*W₂ ) *factor_h₁ + I
-        factor_h₂ = (Diagonal(A) + (W₁*D_list_1[:,:,i+1])*W₂ - (W₁*D_list_2[:,:,i])*W₂ )*factor_h₂ + (W₁*D_list_1[:,:,i+1])
+        factor_h₁ = (Diagonal(A) + (W₁*D_list_1[:,:,i+1])*W₂ - (W₁*D_list_2[:,:,i+1])*W₂ ) *factor_h₁ + I
+        factor_h₂ = (Diagonal(A) + (W₁*D_list_1[:,:,i+1])*W₂ - (W₁*D_list_2[:,:,i+1])*W₂ )*factor_h₂ + (W₁*D_list_1[:,:,i+1])
     end
     factor_z = (Diagonal(A) + (W₁*D_list_1[:,:,order])*W₂- (W₁*D_list_2[:,:,order])*W₂)*factor_z
     return factor_z, factor_h₁, factor_h₂
