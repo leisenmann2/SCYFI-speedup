@@ -17,19 +17,19 @@ function test_finding_1_cycle_2D_for_holes()
     #println(FPs[1][1])
     @test length(FPs[1][1]) == 1
 end
-# define variables for GT sys with 1 cycle if
-a2 = -0.7 
-a1 = 0.69999999999999999999999999999
-w1 = -0.14375
-w2 = 0.52505308
-h1 = 0.37298253
-h2 = -0.97931491
-A = [a1 0; 0 a2]
-W = [0 w1; w2 0]
-h = [h1, h2]
-dz = 2
-k = 1
-FPs,eigenvals = find_cycles(A, W, h,k,outer_loop_iterations=10,inner_loop_iterations=20)
+# # define variables for GT sys with 1 cycle if
+# a2 = -0.7 
+# a1 = 0.69999999999999999999999999999
+# w1 = -0.14375
+# w2 = 0.52505308
+# h1 = 0.37298253
+# h2 = -0.97931491
+# A = [a1 0; 0 a2]
+# W = [0 w1; w2 0]
+# h = [h1, h2]
+# dz = 2
+# k = 1
+# FPs,eigenvals = find_cycles(A, W, h,k,outer_loop_iterations=10,inner_loop_iterations=20)
 
 function test_finding_1_cycle_2D()
     # define variables for GT sys with 1 cycle if

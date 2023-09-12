@@ -38,4 +38,5 @@ include("./clippedshPLRNN_tests.jl")
     test_finding_1_cycle_M2_H10_clipped()
     test_finding_1_cycle_M2_H10_clipped()
     test_finding_2_cycle_M2_H10_clipped_val()
+    test_finding_10_cycle_M2_H10_clipped()
 end
