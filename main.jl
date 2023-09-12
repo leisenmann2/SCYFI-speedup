@@ -6,4 +6,9 @@ W=[1.7141654 0.90136945 0.7356431 -0.45661467 -1.0216872 -2.1104505 -0.1265201 0
 #h=[-0.25387551903975236, -0.12912468150368118641 -0.08136176 -0.20892598 -0.1640525 -0078, -0.3746121660912428, 0.5381540053468717, 0.13797574730440254, -0.9145060467607822, -0.47008295657633226, 0.23037773308426446, 0.5373384607822, -0.47008295657633226, 0.230377733084681742799, 0.32054443856805936]
 h=[-0.25387551903975236, -0.12912468150368078, -0.3746121660912428, 0.5381540053468717, 0.13797574730440254, -0.9145060467607822, -0.47008295657633226, 0.23037773308426446, 0.5373384681742799, 0.32054443856805936]
 cycles, eigenvals =find_cycles(A, W, h,10,outer_loop_iterations=100,inner_loop_iterations=500)
-#cycles, eigenvals =find_cycles(diag(A), W,W, h,h,2,outer_loop_iterations=1000,inner_loop_iterations=1000)
+
+
+# If using BPTT
+using BPTT
+m,O=load_model("../bptt-julia/Results/test_clipped/clipped-shallow-new-cycle_example_data/data_cycle_10_0ellipses.npy-alpha_0.4-M_3-H_10-reg_1.0e-5-epochs_15000-noise_0.01-batchsize_16/001/checkpoints/model_10000.bson")
+cycles, eigenvals =find_cycles(m.A, m.W₁,m.W₂, m.h₁,m.h₂,10,outer_loop_iterations=100,inner_loop_iterations=500,PLRNN=ClippedShallowPLRNN())

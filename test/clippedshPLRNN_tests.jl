@@ -85,6 +85,35 @@ function test_finding_2_cycle_M2_H10_clipped_val()
     @test round.(FPs[2][1][1][1],digits=3) ∈ round.(traj[:,end-1:end],digits=3)	
 
 end
+
+function test_finding_10_cycle_M2_H10_clipped()	
+    A=[0.60122037, 0.8135468, 0.7626706]
+    W₁=[0.11067849 -0.1302824 0.25012589 -0.22298877 0.15806502 -0.34588745 -0.06457776 -0.09123066 -0.23283756 0.16113971; -0.75709593 -0.62422514 -0.20954604 -0.66458714 0.28777176 -0.13910763 0.013174338 0.64183784 -0.5570398 0.24596561; 0.2582224 0.027766248 0.5165033 -0.30535492 0.28937963 -0.59222066 -0.08215613 -0.16016932 -0.41183522 0.34899935]
+    W₂=[-0.243685 -0.3262217 -0.525551; 0.23788112 0.111583985 0.48059195; -0.0061925445 0.5009318 0.0021386577; -0.2870248 0.21104889 -0.55250746; -0.067662284 0.2247282 -0.19935167; -0.048656207 -0.45318457 0.027064549; -0.0005488223 0.08707904 0.00031374826; 0.219448 0.10352938 0.40836236; 0.18324012 -0.4742444 0.3508795; 0.06861267 -0.24380997 0.19178945]
+    h₁=[-0.04333596, -0.09287525, -0.08091329]
+    h₂=[0.45786792, -0.33195782, -0.3534318, 0.38365522, -0.31813976, -0.5264057, 0.061465904, 0.47354963, -0.3893013, 0.3268898]
+    
+    FPs,eigenvals =find_cycles(A, W₁,W₂, h₁,h₂,10,outer_loop_iterations=30,inner_loop_iterations=200,PLRNN=ClippedShallowPLRNN())
+    @test length(FPs[10]) > 0
+    #Visualization
+    # m,O=load_model("../bptt-julia/Results/test_clipped/clipped-shallow-new-cycle_example_data/data_cycle_10_0ellipses.npy-alpha_0.4-M_3-H_10-reg_1.0e-5-epochs_15000-noise_0.01-batchsize_16/001/checkpoints/model_10000.bson")
+    # cycles, eigenvals =find_cycles(m.A, m.W₁,m.W₂, m.h₁,m.h₂,10,outer_loop_iterations=100,inner_loop_iterations=500,PLRNN=ClippedShallowPLRNN())
+    # println(m.A)
+    # println(m.W₁)
+    # println(m.W₂)
+    # println(m.h₁)
+    # println(m.h₂)
+    # using Plots
+
+    # traj = generate(m,O,randn(2),10000)
+
+    # p = plot(traj[end-100:end,1],traj[end-100:end,2],legend=false)
+
+    # cycles[10][1]
+    # cyc=reshape(collect(Iterators.flatten(cycles[10][1])), (length(cycles[10][1][1]),length(cycles[10][1])))
+    # plot!(p,cyc[1,:],cyc[2,:],linewidth=3,linestyle=:dash,marker=:circle,markersize=3,color="red")
+end
+test_finding_10_cycle_M2_H10_clipped()	
 #test_finding_1_cycle_M2_H10_clipped()
 
 # FPs
