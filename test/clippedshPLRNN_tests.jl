@@ -98,7 +98,7 @@ function test_finding_10_cycle_M2_H10_clipped()
     
     FPs,eigenvals =find_cycles(A, W₁,W₂, h₁,h₂,10,outer_loop_iterations=30,inner_loop_iterations=200,PLRNN=ClippedShallowPLRNN())
     @test length(FPs[10]) > 0
-    #Visualization
+    #Visualization (needs BPTT)
     # m,O=load_model("../bptt-julia/Results/test_clipped/clipped-shallow-new-cycle_example_data/data_cycle_10_0ellipses.npy-alpha_0.4-M_3-H_10-reg_1.0e-5-epochs_15000-noise_0.01-batchsize_16/001/checkpoints/model_10000.bson")
     # cycles, eigenvals =find_cycles(m.A, m.W₁,m.W₂, m.h₁,m.h₂,10,outer_loop_iterations=100,inner_loop_iterations=500,PLRNN=ClippedShallowPLRNN())
     # println(m.A)
@@ -119,6 +119,27 @@ end
 	
 #test_finding_1_cycle_M2_H10_clipped()
 
+function test_finding_20_cycle_M2_H10_clipped()	
+    A=[0.9338895, 0.8158928, 0.64717215]
+    W₁=[-0.08257616 -0.06510486 -0.3011948 -0.01509484 -0.24916363 0.20184407 0.18710229 -0.26356283 0.20855018 -0.26561627; 0.4785514 -0.5583767 0.31031066 -0.415861 -0.38136455 -0.13172355 0.52841985 -0.058546904 -0.4165734 0.0913285; -0.02599251 0.032929726 0.035843737 0.09668805 -0.030407568 -0.013791576 0.032235596 0.04951459 0.09209862 0.046291262]
+    W₂=[-0.40293103 -0.14325522 0.054672144; 0.48560253 0.007107038 0.12721366; -0.23135893 -0.23621486 0.05824172; -0.3275432 -0.14798847 -0.09055013; 0.3009528 -0.07327408 -0.17328814; 0.046891127 0.1438347 -0.08094727; 0.4461682 -0.11263572 -0.15933159; -0.15238671 0.20166379 0.009564617; -0.3536613 -0.21320055 0.0042185816; -0.09381822 0.17765957 -0.13131015]
+    h₁=[-0.066404805, 0.043454356, 0.28484693]
+    h₂=[-0.225078, -0.25648823, -0.2741254, 0.21262659, -0.28708217, -0.17037255, 0.28027406, 0.10760485, 0.23348168, 0.15340137]
+    
+    FPs,eigenvals =find_cycles(A, W₁,W₂, h₁,h₂,20,outer_loop_iterations=30,inner_loop_iterations=200,PLRNN=ClippedShallowPLRNN())
+    @test length(FPs[20]) > 0
+    @test length(FPs[10]) == 0
+    #visualization (needs BPTT)
+    # traj = generate(m,O,randn(2),10000)
+
+    # p = plot(traj[end-100:end,1],traj[end-100:end,2],legend=false)
+
+    # cycles[20]
+    # cyc=reshape(collect(Iterators.flatten(cycles[20][2])), (length(cycles[20][2][1]),length(cycles[20][2])))
+    # plot!(p,cyc[1,:],cyc[2,:],linewidth=3,linestyle=:dash,marker=:circle,markersize=3,color="red")
+
+end
+test_finding_20_cycle_M2_H10_clipped()	
 # FPs
 # traj[:,end-2:end]
 # FPs

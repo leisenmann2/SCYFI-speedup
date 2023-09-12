@@ -1,5 +1,4 @@
 #Define Data types
-# abstract type
 abstract type AbstractPLRNN end
 
 struct VanillaPLRNN <: AbstractPLRNN end
