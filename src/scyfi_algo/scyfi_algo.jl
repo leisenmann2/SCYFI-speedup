@@ -163,7 +163,9 @@ function scy_fi(
     PLRNN::ClippedShallowPLRNN;
     outer_loop_iterations:: Union{Integer,Nothing} = nothing,
     inner_loop_iterations:: Union{Integer,Nothing} = nothing,
-    
+    get_pool_from_traj:: Bool = false,
+    num_trajectories:: Integer=10, 
+    len_trajectories:: Integer=100
      )
     
     latent_dim = size(A)[1]
@@ -171,7 +173,12 @@ function scy_fi(
     cycles_found = Array[]
     eigvals =  Array[]
     outer_loop_iterations, inner_loop_iterations = set_loop_iterations(order, outer_loop_iterations, inner_loop_iterations)
- 
+    # create pool of allowed D matrices, in the shPLRNN there are overlapping regions which can be excluded, this makes the algorithm more efficient
+    if get_pool_from_traj
+        relu_pool=construct_relu_matrix_pool_traj(A, W₁, W₂, h₁, h₂, size(A)[1],hidden_dim, num_trajectories, len_trajectories)
+    else
+        relu_pool=construct_relu_matrix_pool(A, W₁, W₂, h₁, h₂, size(A)[1],hidden_dim)
+    end
     #println("Number of initialisations in Pool: ", size(relu_pool)[3])
     i = -1
     while i < outer_loop_iterations # This loop can be viewed as (re-)initialization of the algo in some set of linear regions

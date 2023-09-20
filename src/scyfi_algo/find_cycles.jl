@@ -35,10 +35,11 @@ function find_cycles(
     order:: Integer;
     outer_loop_iterations:: Union{Integer,Nothing} = nothing,
     get_pool_from_traj=false,
-    num_trajectories:: Integer,
-    len_trajectories:: Integer,
+    num_trajectories:: Integer=10,
+    len_trajectories:: Integer=100,
     inner_loop_iterations:: Union{Integer,Nothing} = nothing,
-    PLRNN:: Union{AbstractPLRNN,Nothing} = ShallowPLRNN()
+    PLRNN:: Union{AbstractPLRNN,Nothing} = ShallowPLRNN(),
+
     )
     found_lower_orders = Array[]
     found_eigvals = Array[]
@@ -46,7 +47,7 @@ function find_cycles(
     relu_pool=construct_relu_matrix_pool(A, W₁, W₂, h₁, h₂, size(A)[1],size(h₂)[1])
      
     for i =1:order
-        cycles_found, eigvals = scy_fi(A, W₁, W₂, h₁, h₂, i, found_lower_orders, outer_loop_iterations=outer_loop_iterations,inner_loop_iterations=inner_loop_iterations,get_pool_from_traj=get_pool_from_traj,
+        cycles_found, eigvals = scy_fi(A, W₁, W₂, h₁, h₂, i, found_lower_orders,relu_pool,PLRNN, outer_loop_iterations=outer_loop_iterations,inner_loop_iterations=inner_loop_iterations,get_pool_from_traj=get_pool_from_traj,
         num_trajectories=num_trajectories, 
         len_trajectories=len_trajectories)
      
