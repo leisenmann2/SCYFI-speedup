@@ -13,10 +13,23 @@ function test_finding_1_cycle_2D_for_holes()
     h = [h1, h2]
     dz = 2
     k = 1
-    FPs,eigenvals = find_cycles(A, W, h,k,outer_loop_iterations=10,inner_loop_iterations=20)
+    FPs,eigenvals = find_cycles(A, W, h,k,outer_loop_iterations=10,inner_loop_iterations=20,PLRNN=VanillaPLRNN())
     #println(FPs[1][1])
     @test length(FPs[1][1]) == 1
 end
+# # define variables for GT sys with 1 cycle if
+# a2 = -0.7 
+# a1 = 0.69999999999999999999999999999
+# w1 = -0.14375
+# w2 = 0.52505308
+# h1 = 0.37298253
+# h2 = -0.97931491
+# A = [a1 0; 0 a2]
+# W = [0 w1; w2 0]
+# h = [h1, h2]
+# dz = 2
+# k = 1
+# FPs,eigenvals = find_cycles(A, W, h,k,outer_loop_iterations=10,inner_loop_iterations=20)
 
 function test_finding_1_cycle_2D()
     # define variables for GT sys with 1 cycle if
@@ -270,7 +283,7 @@ function test_finding_65_cycle_2D()
     h = [h1, h2]
     dz = 2
     k = 65
-    FPs,eigvals = find_cycles(A, W, h,k,outer_loop_iterations=20,inner_loop_iterations=60)
+    FPs,eigvals = find_cycles(A, W, h,k,outer_loop_iterations=30,inner_loop_iterations=100)
     #println(FPs[31])
     @test length(FPs[65]) == 2
 end
@@ -311,7 +324,7 @@ function test_finding_80_cycle_2D()
     h = [h1, h2]
     dz = 2
     k = 80
-    FPs,eigvals = find_cycles(A, W, h,k,outer_loop_iterations=20,inner_loop_iterations=100)
+    FPs,eigvals = find_cycles(A, W, h,k,outer_loop_iterations=30,inner_loop_iterations=130)
     #println(FPs[31])
     @test length(FPs[80]) == 2
 end
