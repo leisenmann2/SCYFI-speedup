@@ -78,7 +78,9 @@ function scy_fi(
     found_lower_orders:: Array;
     outer_loop_iterations:: Union{Integer,Nothing} = nothing,
     inner_loop_iterations:: Union{Integer,Nothing} = nothing,
-    get_pool_from_traj:: Bool = false
+    get_pool_from_traj:: Bool = false,
+    num_trajectories:: Integer, 
+    len_trajectories:: Integer
      )
     latent_dim = size(A)[1]
     hidden_dim = size(h₂)[1]
@@ -87,7 +89,7 @@ function scy_fi(
     outer_loop_iterations, inner_loop_iterations = set_loop_iterations(order, outer_loop_iterations, inner_loop_iterations)
     # create pool of allowed D matrices, in the shPLRNN there are overlapping regions which can be excluded, this makes the algorithm more efficient
     if get_pool_from_traj
-        relu_pool=construct_relu_matrix_pool_traj(A, W₁, W₂, h₁, h₂, size(A)[1],hidden_dim)
+        relu_pool=construct_relu_matrix_pool_traj(A, W₁, W₂, h₁, h₂, size(A)[1],hidden_dim, num_trajectories, len_trajectories)
     else
         relu_pool=construct_relu_matrix_pool(A, W₁, W₂, h₁, h₂, size(A)[1],hidden_dim)
     end
