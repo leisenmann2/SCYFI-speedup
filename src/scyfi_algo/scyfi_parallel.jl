@@ -100,52 +100,58 @@ function scy_fi(
     cycles_found = Array[]
     eigvals =  Array[]
     outer_loop_iterations, inner_loop_iterations = set_loop_iterations(order, outer_loop_iterations, inner_loop_iterations)
-    i = -1
-    while i < outer_loop_iterations # This loop can be viewed as (re-)initialization of the algo in some set of linear regions
-        i += 1
-        relu_matrix_list = construct_relu_matrix_list(relu_pool, order)     # generate random set of linear regions from pool to start from
-        difference_relu_matrices = 1                                        # flag that indiates wheter the initilized relu matrices are the same as the candidate matrices
-        c = 0
-        while c < inner_loop_iterations
-            c += 1
-            z_candidate = get_cycle_point_candidate(A, W₁, W₂, h₁, h₂, relu_matrix_list, order)
-            if z_candidate !== nothing
-                trajectory = get_latent_time_series(order, A, W₁, W₂, h₁, h₂, latent_dim, z_0=z_candidate)
-                trajectory_relu_matrix_list = Array{Bool}(undef, hidden_dim, hidden_dim, order)
-                for j = 1:order
-                    trajectory_relu_matrix_list[:,:,j] = Diagonal((W₂*trajectory[j] + h₂).>0)                       # get relu matrices of the candidate
-                end
-                for j = 1:order
-                    difference_relu_matrices = sum(abs.(trajectory_relu_matrix_list[:,:,j].-relu_matrix_list[:,:,j])) # check if cycle candidate lies in the same linear regions as the initialization
-                    if difference_relu_matrices != 0
-                        break
+    n_threads = Threads.nthreads()
+    lk = ReentrantLock()
+
+    Threads.@threads for thread_iterator = 1:n_threads
+        i = -1
+        while i < outer_loop_iterations # This loop can be viewed as (re-)initialization of the algo in some set of linear regions
+            i += 1
+            relu_matrix_list = construct_relu_matrix_list(relu_pool, order)     # generate random set of linear regions from pool to start from
+            difference_relu_matrices = 1                                        # flag that indiates wheter the initilized relu matrices are the same as the candidate matrices
+            c = 0
+            while c < inner_loop_iterations
+                c += 1
+                z_candidate = get_cycle_point_candidate(A, W₁, W₂, h₁, h₂, relu_matrix_list, order)
+                if z_candidate !== nothing
+                    trajectory = get_latent_time_series(order, A, W₁, W₂, h₁, h₂, latent_dim, z_0=z_candidate)
+                    trajectory_relu_matrix_list = Array{Bool}(undef, hidden_dim, hidden_dim, order)
+                    for j = 1:order
+                        trajectory_relu_matrix_list[:,:,j] = Diagonal((W₂*trajectory[j] + h₂).>0)                       # get relu matrices of the candidate
                     end
-                    if !isempty(found_lower_orders)
-                        if map(temp -> round.(temp, digits=2), trajectory[1]) ∈ map(temp -> round.(temp,digits=2),collect(Iterators.flatten(Iterators.flatten(found_lower_orders))))
-                            difference_relu_matrices = 1
+                    for j = 1:order
+                        difference_relu_matrices = sum(abs.(trajectory_relu_matrix_list[:,:,j].-relu_matrix_list[:,:,j])) # check if cycle candidate lies in the same linear regions as the initialization
+                        if difference_relu_matrices != 0
                             break
                         end
+                        if !isempty(found_lower_orders)
+                            if map(temp -> round.(temp, digits=2), trajectory[1]) ∈ map(temp -> round.(temp,digits=2),collect(Iterators.flatten(Iterators.flatten(found_lower_orders))))
+                                difference_relu_matrices = 1
+                                break
+                            end
+                        end
                     end
-                end
-                if difference_relu_matrices == 0    # if the linear regions match check if we already found that cycle
-                    if map(temp1 -> round.(temp1, digits=2), trajectory[1]) ∉ map(temp -> round.(temp, digits=2), collect(Iterators.flatten(cycles_found)))
-                        e = get_eigvals(A, W₁, W₂, relu_matrix_list, order)
-                        push!(cycles_found,trajectory)
-                        push!(eigvals,e)
-                        i=0
-                        c=0
+                    if difference_relu_matrices == 0    # if the linear regions match check if we already found that cycle
+                        if map(temp1 -> round.(temp1, digits=2), trajectory[1]) ∉ map(temp -> round.(temp, digits=2), collect(Iterators.flatten(cycles_found)))
+                            e = get_eigvals(A, W₁, W₂, relu_matrix_list, order)
+                            lock(lk) do
+                                push!(cycles_found,trajectory)
+                                push!(eigvals,e)
+                                i=0
+                                c=0
+                            end
+                        end
                     end
-                end
-                if relu_matrix_list == trajectory_relu_matrix_list
-                    relu_matrix_list = construct_relu_matrix_list(relu_pool, order)
+                    if relu_matrix_list == trajectory_relu_matrix_list
+                        relu_matrix_list = construct_relu_matrix_list(relu_pool, order)
+                    else
+                        relu_matrix_list = trajectory_relu_matrix_list  # if we did not find a real cycle use the regions of the virtual cycle to recalculate 
+                    end
                 else
-                    relu_matrix_list = trajectory_relu_matrix_list  # if we did not find a real cycle use the regions of the virtual cycle to recalculate 
-                end
-            else
-                relu_matrix_list = construct_relu_matrix_list(relu_pool, order)
-            end 
+                    relu_matrix_list = construct_relu_matrix_list(relu_pool, order)
+                end 
+            end
         end
-    end
     return cycles_found, eigvals
 end
 
