@@ -43,9 +43,13 @@ function find_cycles(
     )
     found_lower_orders = Array[]
     found_eigvals = Array[]
-    # create pool of allowed D matrices, in the shPLRNN there are overlapping regions which can be excluded, this makes the algorithm more efficient
-    relu_pool=construct_relu_matrix_pool(A, W₁, W₂, h₁, h₂, size(A)[1],size(h₂)[1])
-     
+    # create pool of allowed D matrices, in the shPLRNN there are overlapping regions which can be excluded, this makes the algorithm more efficient        
+    if get_pool_from_traj
+        relu_pool=construct_relu_matrix_pool_traj(A, W₁, W₂, h₁, h₂, size(A)[1], size(h₂)[1], num_trajectories, len_trajectories)
+    else
+        relu_pool=construct_relu_matrix_pool(A, W₁, W₂, h₁, h₂, size(A)[1],size(h₂)[1])
+    end
+    println("Number of initialisations in Pool: ", size(relu_pool)[3])
     for i =1:order
         cycles_found, eigvals = scy_fi(A, W₁, W₂, h₁, h₂, i, found_lower_orders,relu_pool,PLRNN, outer_loop_iterations=outer_loop_iterations,inner_loop_iterations=inner_loop_iterations,get_pool_from_traj=get_pool_from_traj,
         num_trajectories=num_trajectories, 
