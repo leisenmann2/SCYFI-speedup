@@ -194,7 +194,7 @@ function scy_fi(
         while i < outer_loop_iterations # This loop can be viewed as (re-)initialization of the algo in some set of linear regions
             i += 1
             relu_matrix_list_1 = construct_relu_matrix_list(relu_pool, order)     # generate random set of linear regions from pool to start from
-            relu_matrix_list_2 = relu_matrix_list_1                                # initialise the two sets the same
+            relu_matrix_list_2 = construct_relu_matrix_list(relu_pool, order)# relu_matrix_list_1                                # initialise the two sets the same
             difference_relu_matrices = 1                                        # flag that indiates wheter the initilized relu matrices are the same as the candidate matrices
             c = 0
             while c < inner_loop_iterations
@@ -234,14 +234,14 @@ function scy_fi(
                     end
                     if relu_matrix_list_1 == trajectory_relu_matrix_list_1 && relu_matrix_list_2 == trajectory_relu_matrix_list_2
                         relu_matrix_list_1 = construct_relu_matrix_list(relu_pool, order)
-                        relu_matrix_list_2 =relu_matrix_list_1
+                        relu_matrix_list_2 = construct_relu_matrix_list(relu_pool, order) #relu_matrix_list_1
                     else
                         relu_matrix_list_1 = trajectory_relu_matrix_list_1  # if we did not find a real cycle use the regions of the virtual cycle to recalculate 
                         relu_matrix_list_2 = trajectory_relu_matrix_list_2
                     end
                 else
                     relu_matrix_list_1 = construct_relu_matrix_list(relu_pool, order)
-                    relu_matrix_list_2 =relu_matrix_list_1
+                    relu_matrix_list_2 = construct_relu_matrix_list(relu_pool, order) #relu_matrix_list_1
                 end 
             end
         end
