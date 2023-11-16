@@ -80,6 +80,9 @@ function scy_fi(
     PLRNN::ShallowPLRNN;
     outer_loop_iterations:: Union{Integer,Nothing} = nothing,
     inner_loop_iterations:: Union{Integer,Nothing} = nothing,
+    get_pool_from_traj:: Bool = false,
+    num_trajectories:: Integer, 
+    len_trajectories:: Integer
     )
     
     latent_dim = size(A)[1]
@@ -87,7 +90,6 @@ function scy_fi(
     cycles_found = Array[]
     eigvals =  Array[]
     outer_loop_iterations, inner_loop_iterations = set_loop_iterations(order, outer_loop_iterations, inner_loop_iterations)
- 
     i = -1
     while i < outer_loop_iterations # This loop can be viewed as (re-)initialization of the algo in some set of linear regions
         i += 1
@@ -154,7 +156,9 @@ function scy_fi(
     PLRNN::ClippedShallowPLRNN;
     outer_loop_iterations:: Union{Integer,Nothing} = nothing,
     inner_loop_iterations:: Union{Integer,Nothing} = nothing,
-    
+    get_pool_from_traj:: Bool = false,
+    num_trajectories:: Integer=10, 
+    len_trajectories:: Integer=100
      )
     
     latent_dim = size(A)[1]
@@ -162,8 +166,6 @@ function scy_fi(
     cycles_found = Array[]
     eigvals =  Array[]
     outer_loop_iterations, inner_loop_iterations = set_loop_iterations(order, outer_loop_iterations, inner_loop_iterations)
- 
-    #println("Number of initialisations in Pool: ", size(relu_pool)[3])
     i = -1
     while i < outer_loop_iterations # This loop can be viewed as (re-)initialization of the algo in some set of linear regions
         i += 1
