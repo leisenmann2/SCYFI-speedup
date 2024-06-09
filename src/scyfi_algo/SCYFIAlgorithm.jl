@@ -1,12 +1,20 @@
 module SCYFIAlgorithm
-using LinearAlgebra
-using ..Utilities
+    using LinearAlgebra
+    using Random
+    using CUDA 
+    using ..Utilities
 
-export scy_fi,
-    find_cycles
+    export find_cycles
 
-#include("scyfi_algo.jl")
-include("find_cycles.jl")
+    module SCYFI_gpu
+        export find_cycles
+        include("./gpu/find_cycles.jl")
+    end
 
+    module SCYFI_cpu
+        export find_cycles
+        include("./cpu/find_cycles.jl")
+    end
 
+    include("./find_cycles.jl")
 end

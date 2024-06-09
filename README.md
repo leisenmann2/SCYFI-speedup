@@ -41,6 +41,9 @@ These instructions will guide you through setting up the project environment and
 
    ```julia
 
+   # sets the number of CPU threads used by julia for linear algebra calculations
+   BLAS.set_num_threads(1)
+
    # Set up PLRNN parameters
    A = ...
    W = ...
@@ -65,14 +68,32 @@ These instructions will guide you through setting up the project environment and
     h₁ = [-0.5480895548836227, -0.2922735885352696]
     h₂ = [0.5352937111114038, -1.110030373073419, -1.3146036515301616, 0.2748467715335772, -1.4155203620983157, 0.7891282169615852, -0.13084812694281087, -0.40652418385647066, -0.9383323642698853, -0.9983356016811977]
 
-    FPs,eigenvals =find_cycles(A, W₁,W₂, h₁,h₂,4,outer_loop_iterations=10,inner_loop_iterations=60)
+    FPs,eigenvals = find_cycles(A, W₁,W₂, h₁,h₂,4,outer_loop_iterations=10,inner_loop_iterations=60)
 
    ```
+
 
 3. Execute the `main.jl` script in your project environment:
 
    ```shell
    julia --project=. main.jl
+   ```
+
+
+4. The GPU version is automatically activated for dimensions, where one resonably expects an efficiency gain (instead of loss). But you can also set this manually, e.g.:
+
+   ```julia
+
+   # set the gpu version manually
+   FPs,eigenvals = find_cycles(A, W₁,W₂, h₁,h₂,4, gpu_version=true, outer_loop_iterations=10,inner_loop_iterations=60)
+
+   ```
+
+
+5. To control the GPUs to use (here: device-id 0, 1) or number of CPU threads (here: 2, which automatically starts the mulit-threaded version), use e.g.
+
+   ```shell
+   CUDA_VISIBLE_DEVICES=0,1 julia --project=. -t 2 main.jl
    ```
 
 
