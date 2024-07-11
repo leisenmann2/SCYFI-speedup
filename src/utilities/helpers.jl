@@ -145,14 +145,22 @@ end
 Initialise pool of admissable Relu matrices for a specific shallow PLRNN by drawing trajectories and storing the visited regions
 shPLRNN, inplace 
 """
-function construct_relu_matrix_pool_traj(A::Array, W₁::Array, W₂::Array, h₁::Array, h₂::Array, latent_dim::Integer, hidden_dim::Integer, PLRNN::ShallowPLRNN; num_trajectories::Integer = 10, len_trajectories::Integer = 100, search_space::Array = [-10, 10], type::Union{Type{Float32}, Type{Float64}} = eltype(A)) 
+function construct_relu_matrix_pool_traj(A::Array, W₁::Array, W₂::Array, h₁::Array, h₂::Array, latent_dim::Integer, hidden_dim::Integer, PLRNN::ShallowPLRNN; num_trajectories::Integer = 10, len_trajectories::Integer = 100, search_space::Array = [-10, 10], initial_conditions::Array = [], type::Union{Type{Float32}, Type{Float64}} = eltype(A)) 
     # preallocate big arrays
     trajectory_relu_matrix_list = Array{Bool}(undef, hidden_dim, len_trajectories, num_trajectories) 
     trajectory = Array{type}(undef, latent_dim, len_trajectories)
     z_0 = Array{type}(undef, latent_dim)
     temp = Array{type}(undef, hidden_dim)
-    # fill trajectory_relu_matrix_list uniformely from trajectories starting at random initial conditions
-    for i = 1:num_trajectories 
+    n_0 = length(initial_conditions)
+
+    # fill trajectory_relu_matrix_list uniformely from trajectories starting at given initial conditions
+    for i = 1:n_0
+        z_0 .= initial_conditions[i]
+        get_latent_time_series!(trajectory, view(trajectory_relu_matrix_list, :, :, i), len_trajectories, A, W₁, W₂, h₁, h₂, z_0, temp)
+    end
+
+    # fill remaining trajectory_relu_matrix_list uniformely from trajectories starting at random initial conditions
+    for i = (n_0 + 1):num_trajectories 
         rand!(z_0) # in [0, 1)
         z_0 .= z_0 .* (search_space[2] - search_space[1]) .+ search_space[1] # scale
         get_latent_time_series!(trajectory, view(trajectory_relu_matrix_list, :, :, i), len_trajectories, A, W₁, W₂, h₁, h₂, z_0, temp) 
@@ -167,14 +175,22 @@ end
 Initialise pool of admissable Relu matrices for a specific shallow PLRNN by drawing trajectories and storing the visited regions
 shPLRNN, inplace, GPU
 """
-function construct_relu_matrix_pool_traj(A::CuArray, W₁::CuArray, W₂::CuArray, h₁::CuArray, h₂::CuArray, latent_dim::Integer, hidden_dim::Integer, PLRNN::ShallowPLRNN; num_trajectories::Integer = 10, len_trajectories::Integer = 100, search_space::Array = [-10, 10], type::Union{Type{Float32}, Type{Float64}} = eltype(A)) # TODO: n_points proportional to 2^(hidden_dim) 
+function construct_relu_matrix_pool_traj(A::CuArray, W₁::CuArray, W₂::CuArray, h₁::CuArray, h₂::CuArray, latent_dim::Integer, hidden_dim::Integer, PLRNN::ShallowPLRNN; num_trajectories::Integer = 10, len_trajectories::Integer = 100, search_space::Array = [-10, 10], initial_conditions::Array=[], type::Union{Type{Float32}, Type{Float64}} = eltype(A)) # TODO: n_points proportional to 2^(hidden_dim) 
     # preallocate big arrays
     trajectory_relu_matrix_list = CuArray{Bool}(undef, hidden_dim, len_trajectories, num_trajectories) 
     trajectory = CuArray{type}(undef, latent_dim, len_trajectories)
     z_0 = CuArray{type}(undef, latent_dim)
     temp = CuArray{type}(undef, hidden_dim)
+    n_0 = length(initial_conditions)
+
+    # fill trajectory_relu_matrix_list uniformely from trajectories starting at given initial conditions
+    for i = 1:n_0
+        CUDA.copyto!(z_0, initial_conditions[i])
+        get_latent_time_series!(trajectory, CUDA.view(trajectory_relu_matrix_list, :, :, i), len_trajectories, A, W₁, W₂, h₁, h₂, z_0, temp) 
+    end
+    
     # fill trajectory_relu_matrix_list uniformely from trajectories starting at random initial conditions
-    for i = 1:num_trajectories
+    for i = (n_0+1):num_trajectories
         CUDA.rand!(z_0) # in [0, 1)
         z_0 .= z_0 .* (search_space[2] - search_space[1]) .+ search_space[1] # scale
         get_latent_time_series!(trajectory, CUDA.view(trajectory_relu_matrix_list, :, :, i), len_trajectories, A, W₁, W₂, h₁, h₂, z_0, temp) 
@@ -195,15 +211,23 @@ end
 Initialise pool of admissable Relu matrices for a specific shallow PLRNN by drawing trajectories and storing the visited regions
 ClippedShPLRNN, inplace 
 """
-function construct_relu_matrix_pool_traj(A::Array, W₁::Array, W₂::Array, h₁::Array, h₂::Array, latent_dim::Integer, hidden_dim::Integer, PLRNN::ClippedShallowPLRNN; num_trajectories::Integer = 10, len_trajectories::Integer = 100, search_space::Array = [-10, 10], type::Union{Type{Float32}, Type{Float64}} = eltype(A)) 
+function construct_relu_matrix_pool_traj(A::Array, W₁::Array, W₂::Array, h₁::Array, h₂::Array, latent_dim::Integer, hidden_dim::Integer, PLRNN::ClippedShallowPLRNN; num_trajectories::Integer = 10, len_trajectories::Integer = 100, search_space::Array = [-10, 10], initial_conditions::Array=[], type::Union{Type{Float32}, Type{Float64}} = eltype(A)) 
     # preallocate big arrays
     trajectory_relu_matrix_list_1 = Array{Bool}(undef, hidden_dim, len_trajectories, num_trajectories)
     trajectory_relu_matrix_list_2 = Array{Bool}(undef, hidden_dim, len_trajectories, num_trajectories)
     trajectory = Array{type}(undef, latent_dim, len_trajectories)
     z_0 = Array{type}(undef, latent_dim)
     temp = Array{type}(undef, hidden_dim)
-    # fill trajectory_relu_matrix_list uniformely from trajectories starting at random initial conditions
-    for i = 1:num_trajectories 
+    n_0 = length(initial_conditions)
+
+    # fill trajectory_relu_matrix_list uniformely from trajectories starting at given initial conditions
+    for i = 1:n_0
+        z_0 .= initial_conditions[i]
+        get_latent_time_series!(trajectory, view(trajectory_relu_matrix_list_1, :, :, i), view(trajectory_relu_matrix_list_2, :, :, i), len_trajectories, A, W₁, W₂, h₁, h₂, z_0, temp) 
+    end
+
+    # fill trajectory_relu_matrix_list uniformely from trajectories starting at random initial conditions in search space
+    for i = (n_0 + 1):num_trajectories 
         rand!(z_0) # in [0, 1)
         z_0 .= z_0 .* (search_space[2] - search_space[1]) .+ search_space[1] # scale
         get_latent_time_series!(trajectory, view(trajectory_relu_matrix_list_1, :, :, i), view(trajectory_relu_matrix_list_2, :, :, i), len_trajectories, A, W₁, W₂, h₁, h₂, z_0, temp) 
@@ -218,16 +242,23 @@ end
 Initialise pool of admissable Relu matrices for a specific shallow PLRNN by drawing trajectories and storing the visited regions
 ClippedShPLRNN, inplace, GPU
 """
-function construct_relu_matrix_pool_traj(A::CuArray, W₁::CuArray, W₂::CuArray, h₁::CuArray, h₂::CuArray, latent_dim::Integer, hidden_dim::Integer, PLRNN::ClippedShallowPLRNN; num_trajectories::Integer = 10, len_trajectories::Integer = 100, search_space::Array = [-10, 10], type::Union{Type{Float32}, Type{Float64}} = eltype(A)) # TODO: n_points proportional to 2^(hidden_dim) 
+function construct_relu_matrix_pool_traj(A::CuArray, W₁::CuArray, W₂::CuArray, h₁::CuArray, h₂::CuArray, latent_dim::Integer, hidden_dim::Integer, PLRNN::ClippedShallowPLRNN; num_trajectories::Integer = 10, len_trajectories::Integer = 100, search_space::Array = [-10, 10], initial_conditions::Array=[], type::Union{Type{Float32}, Type{Float64}} = eltype(A)) # TODO: n_points proportional to 2^(hidden_dim) 
     # preallocate big arrays
     trajectory_relu_matrix_list_1 = CuArray{Bool}(undef, hidden_dim, len_trajectories, num_trajectories)
     trajectory_relu_matrix_list_2 = CuArray{Bool}(undef, hidden_dim, len_trajectories, num_trajectories) 
     trajectory = CuArray{type}(undef, latent_dim, len_trajectories)
     z_0 = CuArray{type}(undef, latent_dim)
     temp = CuArray{type}(undef, hidden_dim)
-    
+    n_0 = length(initial_conditions)
+
+    # fill trajectory_relu_matrix_list uniformely from trajectories starting at given initial conditions
+    for i = 1:n_0
+        CUDA.copyto!(z_0, initial_conditions[i])
+        get_latent_time_series!(trajectory, CUDA.view(trajectory_relu_matrix_list_1, :, :, i), CUDA.view(trajectory_relu_matrix_list_2, :, :, i), len_trajectories, A, W₁, W₂, h₁, h₂, z_0, temp) 
+    end
+
     # fill trajectory_relu_matrix_list uniformely from trajectories starting at random initial conditions
-    for i = 1:num_trajectories
+    for i = (n_0+1):num_trajectories
         CUDA.rand!(z_0) # in [0, 1)
         z_0 .= z_0 .* (search_space[2] - search_space[1]) .+ search_space[1] # scale
         get_latent_time_series!(trajectory, CUDA.view(trajectory_relu_matrix_list_1, :, :, i), CUDA.view(trajectory_relu_matrix_list_2, :, :, i), len_trajectories, A, W₁, W₂, h₁, h₂, z_0, temp) 
