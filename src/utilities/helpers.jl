@@ -168,7 +168,7 @@ function construct_relu_matrix_pool_traj(A::Array, W₁::Array, W₂::Array, h�
 
     # return unique regions
     trajectory_relu_matrix_list = reshape(trajectory_relu_matrix_list, (hidden_dim, len_trajectories * num_trajectories))
-    return unique(trajectory_relu_matrix_list, dims=1)
+    return unique(trajectory_relu_matrix_list, dims=2)
 end 
 
 """
@@ -203,7 +203,7 @@ function construct_relu_matrix_pool_traj(A::CuArray, W₁::CuArray, W₂::CuArra
 
     # return unique regions
     trajectory_relu_matrix_list = CUDA.reshape(trajectory_relu_matrix_list, (hidden_dim, len_trajectories * num_trajectories))
-    return CuArray(unique(Array(trajectory_relu_matrix_list), dims=1))
+    return CuArray(unique(Array(trajectory_relu_matrix_list), dims=2))
 end 
 
 
@@ -235,7 +235,7 @@ function construct_relu_matrix_pool_traj(A::Array, W₁::Array, W₂::Array, h�
 
     # return unique regions
     trajectory_relu_matrix_list_1 = reshape(trajectory_relu_matrix_list_1, (hidden_dim, len_trajectories * num_trajectories))
-    return unique(trajectory_relu_matrix_list_1, dims=1)
+    return unique(trajectory_relu_matrix_list_1, dims=2)
 end 
 
 """
@@ -271,7 +271,7 @@ function construct_relu_matrix_pool_traj(A::CuArray, W₁::CuArray, W₂::CuArra
 
     # return unique regions
     trajectory_relu_matrix_list_1 = CUDA.reshape(trajectory_relu_matrix_list_1, (hidden_dim, len_trajectories * num_trajectories))
-    return CuArray(unique(Array(trajectory_relu_matrix_list_1), dims=1))
+    return CuArray(unique(Array(trajectory_relu_matrix_list_1), dims=2))
 end 
 
 
