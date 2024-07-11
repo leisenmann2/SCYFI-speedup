@@ -32,7 +32,7 @@ function find_cycles(
     inner_loop_iterations::Union{Integer,Nothing} = nothing,
     PLRNN::Union{ShallowPLRNN, ClippedShallowPLRNN} = ShallowPLRNN(),
     create_pool::Bool=true,
-    get_pool_from_traj=false,
+    get_pool_from_traj::Bool=false,
     num_trajectories::Integer=10,
     len_trajectories::Integer=100,
     search_space::Array = [-10, 10],

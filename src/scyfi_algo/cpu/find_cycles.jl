@@ -102,8 +102,8 @@ function find_cycles(
     PLRNN::Union{ShallowPLRNN, ClippedShallowPLRNN} = ShallowPLRNN(),
     outer_loop_iterations::Union{Integer,Nothing} = nothing,
     inner_loop_iterations::Union{Integer,Nothing} = nothing,
-    create_pool = true,
-    get_pool_from_traj=false,
+    create_pool::Bool = true,
+    get_pool_from_traj::Bool=false,
     num_trajectories::Integer=10,
     len_trajectories::Integer=100,
     search_space::Array = [-10, 10]
@@ -116,10 +116,10 @@ function find_cycles(
     type = eltype(A)
 
     # preallocate pool of allowed D matrices, in the shPLRNN there are overlapping regions which can be excluded, pre-creating them makes the algorithm more efficient        
-    if get_pool_from_traj
-        relu_pool = construct_relu_matrix_pool_traj(A, W₁, W₂, h₁, h₂, latent_dim, hidden_dim, num_trajectories, len_trajectories, PLRNN == ClippedShallowPLRNN(); search_space = search_space, type = type)
-        println("Number of initialisations in Pool: ", size(relu_pool)[2])
-    elseif create_pool
+    if create_pool & get_pool_from_traj 
+        relu_pool = construct_relu_matrix_pool_traj(A, W₁, W₂, h₁, h₂, latent_dim, hidden_dim, PLRNN; num_trajectories = num_trajectories, len_trajectories=len_trajectories, search_space = search_space, type = type)
+        println("Number of initialisations in Pool from Trajectory: ", size(relu_pool)[2])
+    elseif create_pool & !get_pool_from_traj
         relu_pool = construct_relu_matrix_pool(W₂, h₂, latent_dim, hidden_dim; search_space = search_space, type = type)
         println("Number of initialisations in Pool: ", size(relu_pool)[2])
     else 
@@ -174,8 +174,8 @@ function find_cycles(
     PLRNN::Union{ShallowPLRNN, ClippedShallowPLRNN} = ShallowPLRNN(),
     outer_loop_iterations::Union{Integer,Nothing} = nothing,
     inner_loop_iterations::Union{Integer,Nothing} = nothing,
-    create_pool = true,
-    get_pool_from_traj=false,
+    create_pool::Bool = true,
+    get_pool_from_traj::Bool =false,
     num_trajectories::Integer=10,
     len_trajectories::Integer=100,
     search_space::Array = [-10, 10]
@@ -188,10 +188,10 @@ function find_cycles(
     type = eltype(A)
 
     # preallocate pool of allowed D matrices, in the shPLRNN there are overlapping regions which can be excluded, pre-creating them makes the algorithm more efficient        
-    if get_pool_from_traj
-        relu_pool = construct_relu_matrix_pool_traj(A, W₁, W₂, h₁, h₂, latent_dim, hidden_dim, num_trajectories, len_trajectories, PLRNN == ClippedShallowPLRNN(); search_space = search_space, type = type)
-        println("Number of initialisations in Pool: ", size(relu_pool)[2])
-    elseif create_pool
+    if create_pool & get_pool_from_traj
+        relu_pool = construct_relu_matrix_pool_traj(A, W₁, W₂, h₁, h₂, latent_dim, hidden_dim, PLRNN; num_trajectories = num_trajectories, len_trajectories=len_trajectories, search_space = search_space, type = type)
+        println("Number of initialisations in Pool from Trajectory: ", size(relu_pool)[2])
+    elseif create_pool & !get_pool_from_traj
         relu_pool = construct_relu_matrix_pool(W₂, h₂, latent_dim, hidden_dim; search_space = search_space, type = type)
         println("Number of initialisations in Pool: ", size(relu_pool)[2])
     else 

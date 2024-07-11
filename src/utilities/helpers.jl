@@ -145,7 +145,7 @@ end
 Initialise pool of admissable Relu matrices for a specific shallow PLRNN by drawing trajectories and storing the visited regions
 shPLRNN, inplace 
 """
-function construct_relu_matrix_pool_traj(A::Array, W₁::Array, W₂::Array, h₁::Array, h₂::Array, latent_dim::Integer, hidden_dim::Integer, PLRNN::ShallowPLRNN; num_trajectories::Integer = 10, len_trajectories::Integer = 100, is_clipped::Bool = false, type::Union{Type{Float32}, Type{Float64}} = eltype(A), search_space::Array = [-10, 10]) 
+function construct_relu_matrix_pool_traj(A::Array, W₁::Array, W₂::Array, h₁::Array, h₂::Array, latent_dim::Integer, hidden_dim::Integer, PLRNN::ShallowPLRNN; num_trajectories::Integer = 10, len_trajectories::Integer = 100, search_space::Array = [-10, 10], type::Union{Type{Float32}, Type{Float64}} = eltype(A)) 
     # preallocate big arrays
     trajectory_relu_matrix_list = Array{Bool}(undef, hidden_dim, len_trajectories, num_trajectories) 
     trajectory = Array{type}(undef, latent_dim, len_trajectories)
@@ -195,7 +195,7 @@ end
 Initialise pool of admissable Relu matrices for a specific shallow PLRNN by drawing trajectories and storing the visited regions
 ClippedShPLRNN, inplace 
 """
-function construct_relu_matrix_pool_traj(A::Array, W₁::Array, W₂::Array, h₁::Array, h₂::Array, latent_dim::Integer, hidden_dim::Integer, PLRNN::ClippedShallowPLRNN; num_trajectories::Integer = 10, len_trajectories::Integer = 100, type::Union{Type{Float32}, Type{Float64}} = eltype(A), search_space::Array = [-10, 10]) 
+function construct_relu_matrix_pool_traj(A::Array, W₁::Array, W₂::Array, h₁::Array, h₂::Array, latent_dim::Integer, hidden_dim::Integer, PLRNN::ClippedShallowPLRNN; num_trajectories::Integer = 10, len_trajectories::Integer = 100, search_space::Array = [-10, 10], type::Union{Type{Float32}, Type{Float64}} = eltype(A)) 
     # preallocate big arrays
     trajectory_relu_matrix_list_1 = Array{Bool}(undef, hidden_dim, len_trajectories, num_trajectories)
     trajectory_relu_matrix_list_2 = Array{Bool}(undef, hidden_dim, len_trajectories, num_trajectories)

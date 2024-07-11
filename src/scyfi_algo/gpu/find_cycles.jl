@@ -138,7 +138,7 @@ function find_cycles(
 
     # preallocate pool of allowed D matrices, in the shPLRNN there are overlapping regions which can be excluded, pre-creating them makes the algorithm more efficient        
     if get_pool_from_traj
-        relu_pool = construct_relu_matrix_pool_traj(A_gpu, W₁_gpu, W₂_gpu, h₁_gpu, h₂_gpu, latent_dim, hidden_dim, num_trajectories, len_trajectories, PLRNN == ClippedShallowPLRNN(); search_space = search_space, type = type)
+        relu_pool = construct_relu_matrix_pool_traj(A_gpu, W₁_gpu, W₂_gpu, h₁_gpu, h₂_gpu, latent_dim, hidden_dim, PLRNN; num_trajectories = num_trajectories, len_trajectories=len_trajectories, search_space = search_space, type = type)
         println("Number of initialisations in Pool: ", size(relu_pool)[2])
     elseif create_pool
         relu_pool = construct_relu_matrix_pool(W₂_gpu, h₂_gpu, latent_dim, hidden_dim; search_space = search_space, type = type)
@@ -217,7 +217,7 @@ function find_cycles(
 
     # preallocate pool of allowed D matrices, in the shPLRNN there are overlapping regions which can be excluded, pre-creating them makes the algorithm more efficient        
     if get_pool_from_traj
-        relu_pool = construct_relu_matrix_pool_traj(A_gpu, W₁_gpu, W₂_gpu, h₁_gpu, h₂_gpu, latent_dim, hidden_dim, PLRNN; num_trajectories = num_trajectories, len_trajectories = len_trajectories, search_space = search_space, type = type)
+        relu_pool = construct_relu_matrix_pool_traj(A_gpu, W₁_gpu, W₂_gpu, h₁_gpu, h₂_gpu, latent_dim, hidden_dim, PLRNN; num_trajectories = num_trajectories, len_trajectories=len_trajectories, search_space = search_space, type = type)
         println("Number of initialisations in Pool: ", size(relu_pool)[2])
     elseif create_pool
         relu_pool = construct_relu_matrix_pool(W₂_gpu, h₂_gpu, latent_dim, hidden_dim; search_space = search_space, type = type)
