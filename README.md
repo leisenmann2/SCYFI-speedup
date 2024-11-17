@@ -18,7 +18,7 @@ These instructions will guide you through setting up the project environment and
 1. Clone this repository to your local machine:
 
    ```shell
-   git clone https://gitlab.zi.local/Lukas.Eisenmann/scyfi.git
+   git clone git@github.com:leisenmann2/SCYFI-speedup.git
    cd SCYFI
    ```
 
