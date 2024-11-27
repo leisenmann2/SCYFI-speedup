@@ -574,6 +574,34 @@ function get_latent_time_series!(trajectory::CuArray, time_steps::Integer, A::Cu
 end
 
 """
+Generate the time series by iteravely applying the ALRNN
+inplace, plrnn, cpu
+"""
+function get_latent_time_series!(trajectory::Array, time_steps::Integer, A::Array, W::Array, h::Array, num_relus::Integer, z::Union{Array, SubArray})
+    trajectory[:, 1] .= z 
+    for t = 2:time_steps
+        latent_step!(z, A, W, h, num_relus) # z = A * z .+ W * max.(0,z) .+ h
+        trajectory[:, t] .= z
+    end
+    return trajectory
+end
+
+
+"""
+Generate the time series by iteravely applying the ALRNN
+inplace, plrnn, gpu
+"""
+function get_latent_time_series!(trajectory::CuArray, time_steps::Integer, A::CuArray, W::CuArray, h::CuArray, z::CuArray, num_relus::Integer)
+    trajectory[:, 1] .= z 
+    for t = 2:time_steps
+        latent_step!(z, A, W, h, num_relus) # z = A * z .+ W * max.(0,z) .+ h
+        trajectory[:, t] .= z 
+    end
+    return trajectory
+end
+
+
+"""
 Generate the time series (and according diagonals of relu matrices) by iteravely applying the shPLRNN 
 shPLRNN, inplace
 """
@@ -707,6 +735,25 @@ inplace, gpu
 function latent_step!(z::CuArray, A::CuArray, W::CuArray, h::CuArray)
     z .= A * z .+ W * max.(0,z) .+ h
 end
+
+"""
+PLRNN step
+inplace, cpu
+"""
+function latent_step!(z::Union{SubArray, Array}, A::Array, W::Array, h::Array, num_relus::Integer)
+    z .= A * z .+ W * vcat(z[1:end-num_relus,:], max.(0,z)[end-(num_relus-1):end,:]) .+ h
+end
+
+
+"""
+PLRNN step
+inplace, gpu
+"""
+function latent_step!(z::CuArray, A::CuArray, W::CuArray, h::CuArray, num_relus::Integer)
+    z .= A * z .+ W * vcat(z[1:end-num_relus,:], max.(0,z)[end-(num_relus-1):end,:]) .+ h
+end
+
+
 
 """
 shPLRNN step

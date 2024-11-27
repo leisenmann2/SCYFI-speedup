@@ -27,6 +27,7 @@ export detect_nan_or_inf,
     AbstractPLRNN,
     VanillaPLRNN,
     ShallowPLRNN,
+    ALRNN,
     ClippedShallowPLRNN
 
 include("PLRNNS.jl")

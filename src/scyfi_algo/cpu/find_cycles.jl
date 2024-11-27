@@ -89,6 +89,98 @@ end
 
 
 """ 
+calculate the cycles for a specified PLRNN with parameters A,W,h up until order k
+ALRNN
+"""
+function find_cycles(
+    A::Array, W::Array, h::Array, num_relus::Integer, order::Integer;
+    outer_loop_iterations::Union{Integer,Nothing} = nothing,
+    inner_loop_iterations::Union{Integer,Nothing} = nothing,
+    PLRNN::ALRNN = ALRNN()
+    )
+    
+    found_lower_orders = Array[]
+    found_eigvals = Array[]
+    dim = size(A)[1]
+    type = eltype(A)
+
+    if Threads.nthreads() > 1
+        println("multi-thread parallel version")
+        n_threads= Threads.nthreads()
+
+        # pre-allocate for each thread for in-place version of SCYFI computations 
+        z_candidates = Array{type}(undef, dim, n_threads)
+        inplace_hs = Array{type}(undef, (dim, dim, n_threads)) 
+        inplace_zs = Array{type}(undef, (dim, dim, n_threads))
+        inplace_temps = Array{type}(undef, (dim, dim, n_threads))
+
+        for i = 1:order
+            scy_fi!(found_lower_orders, found_eigvals, A, W, h, num_relus, i, n_threads, z_candidates, inplace_zs, inplace_hs, inplace_temps; outer_loop_iterations = outer_loop_iterations, inner_loop_iterations = inner_loop_iterations, dim = dim, type = type)
+        end
+    else
+        # pre-allocate for in-place version of SCYFI computations
+        z_candidate = Array{type}(undef, dim)
+        inplace_h = Array{type}(undef, (dim, dim)) 
+        inplace_z = Array{type}(undef, (dim, dim))
+        inplace_temp = Array{type}(undef, (dim, dim))
+
+        for i = 1:order
+            scy_fi!(found_lower_orders, found_eigvals, A, W, h, num_relus, i, z_candidate, inplace_z, inplace_h, inplace_temp,PLRNN; outer_loop_iterations = outer_loop_iterations, inner_loop_iterations = inner_loop_iterations, dim = dim, type = type)
+        end
+    end
+
+    return [found_lower_orders, found_eigvals]
+end
+
+
+""" 
+calculate the cycles for a specified PLRNN with parameters A,W,h for order k in orders
+    ALRNN
+"""
+function find_cycles(
+    A:: Array, W:: Array, h:: Array, num_relus::Integer, orders::Array;
+    outer_loop_iterations:: Union{Integer,Nothing}= nothing,
+    inner_loop_iterations:: Union{Integer,Nothing} = nothing,
+    PLRNN::ALRNN = ALRNN()
+    )
+        
+    found_lower_orders = Array[]
+    found_eigvals = Array[]
+    dim = size(A)[1]
+    type = eltype(A)
+
+    if Threads.nthreads() > 1
+        println("multi-thread parallel version")
+        n_threads= Threads.nthreads()
+
+        # pre-allocate for each thread for in-place version of SCYFI computations 
+        z_candidates = Array{type}(undef, dim, n_threads)
+        inplace_hs = Array{type}(undef, (dim, dim, n_threads)) 
+        inplace_zs = Array{type}(undef, (dim, dim, n_threads))
+        inplace_temps = Array{type}(undef, (dim, dim, n_threads))
+
+        for i = orders
+            scy_fi!(found_lower_orders, found_eigvals, A, W, h, num_relus, i, n_threads, z_candidates, inplace_zs, inplace_hs, inplace_temps; outer_loop_iterations = outer_loop_iterations, inner_loop_iterations = inner_loop_iterations, dim = dim, type = type)
+        end
+    else
+        # pre-allocate for in-place version of SCYFI computations
+        z_candidate = Array{type}(undef, dim)
+        inplace_h = Array{type}(undef, (dim, dim)) 
+        inplace_z = Array{type}(undef, (dim, dim))
+        inplace_temp = Array{type}(undef, (dim, dim))
+
+        for i = orders
+            scy_fi!(found_lower_orders, found_eigvals, A, W, h, num_relus, i, z_candidate, inplace_z, inplace_h, inplace_temp; outer_loop_iterations = outer_loop_iterations, inner_loop_iterations = inner_loop_iterations, dim = dim, type = type)
+        end
+    end
+
+    return [found_lower_orders, found_eigvals]
+end
+
+
+
+
+""" 
 calculate the cycles for a specified shPLRNN up until order k
 shPLRNN
 """
