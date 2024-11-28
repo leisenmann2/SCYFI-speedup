@@ -11,6 +11,7 @@ inplace version
 function scy_fi!(found_cycles::Array, found_eigvals::Array, 
     A::Array, W::Array, h::Array, order::Integer,
     z_candidate::Array, inplace_z::Array, inplace_h::Array, inplace_temp::Array;
+    relu_pool::Union{Array, Nothing},
     outer_loop_iterations::Union{Integer,Nothing} = nothing,
     inner_loop_iterations::Union{Integer,Nothing} = nothing, 
     PLRNN::VanillaPLRNN = VanillaPLRNN(),
@@ -65,6 +66,7 @@ inplace version
 function scy_fi!(found_cycles::Array, found_eigvals::Array, 
     A::Array, W::Array, h::Array, num_relus::Integer, order::Integer,
     z_candidate::Array, inplace_z::Array, inplace_h::Array, inplace_temp::Array,PLRNN::ALRNN;
+    relu_pool::Union{Array, Nothing},
     outer_loop_iterations::Union{Integer,Nothing} = nothing,
     inner_loop_iterations::Union{Integer,Nothing} = nothing, 
     dim::Integer = size(A)[1], type::Union{Type{Float32}, Type{Float64}} = eltype(A)
@@ -82,7 +84,7 @@ function scy_fi!(found_cycles::Array, found_eigvals::Array,
     i = -1
     while i < outer_loop_iterations # This loop can be viewed as (re-)initialization of the algo in some set of linear regions
         i += 1
-        Random.rand!(relu_matrix_diagonals) # generate random set of linear regions to start from
+        construct_relu_matrix_diagonals!(relu_matrix_diagonals, relu_pool, order) # generate random set of linear regions to start from
         relu_matrix_diagonals[1:dim-num_relus,:].=1 # set first dim-num_relu regions to 1
         c = 0
         while c < inner_loop_iterations # This loop calculates cycle candidates, checks if they are virtual and if they are initializes 
@@ -103,11 +105,11 @@ function scy_fi!(found_cycles::Array, found_eigvals::Array,
                         i=0
                         c=0
                     end
-                    Random.rand!(relu_matrix_diagonals) 
+                    construct_relu_matrix_diagonals!(relu_matrix_diagonals, relu_pool, order) 
                     relu_matrix_diagonals[1:dim-num_relus,:].=1 # set first dim-num_relu regions to 1
                 end
             else
-                Random.rand!(relu_matrix_diagonals) 
+                construct_relu_matrix_diagonals!(relu_matrix_diagonals, relu_pool, order) 
                 relu_matrix_diagonals[1:dim-num_relus,:].=1 # set first dim-num_relu regions to 1
             end 
         end

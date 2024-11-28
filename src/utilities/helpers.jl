@@ -145,6 +145,37 @@ end
 Initialise pool of admissable Relu matrices for a specific shallow PLRNN by drawing trajectories and storing the visited regions
 shPLRNN, inplace 
 """
+function construct_relu_matrix_pool_traj(A::Array, W::Array, h::Array, num_relus::Integer, dim::Integer, PLRNN::ALRNN; num_trajectories::Integer = 10, len_trajectories::Integer = 100, search_space::Array = [-10, 10], initial_conditions::Array = [], type::Union{Type{Float32}, Type{Float64}} = eltype(A)) 
+    # preallocate big arrays
+    trajectory_relu_matrix_list = Array{Bool}(undef, hidden_dim, len_trajectories, num_trajectories) 
+    trajectory = Array{type}(undef, latent_dim, len_trajectories)
+    z_0 = Array{type}(undef, latent_dim)
+    temp = Array{type}(undef, hidden_dim)
+    n_0 = length(initial_conditions)
+
+    # fill trajectory_relu_matrix_list uniformely from trajectories starting at given initial conditions
+    for i = 1:n_0
+        z_0 .= initial_conditions[i]
+        get_latent_time_series!(trajectory, view(trajectory_relu_matrix_list, :, :, i), len_trajectories, A, W, h, num_relus,dim, z_0, temp)
+    end
+
+    # fill remaining trajectory_relu_matrix_list uniformely from trajectories starting at random initial conditions
+    for i = (n_0 + 1):num_trajectories 
+        rand!(z_0) # in [0, 1)
+        z_0 .= z_0 .* (search_space[2] - search_space[1]) .+ search_space[1] # scale
+        get_latent_time_series!(trajectory, view(trajectory_relu_matrix_list, :, :, i), len_trajectories,  A, W, h, num_relus,dim, z_0, temp) 
+    end
+
+    # return unique regions
+    trajectory_relu_matrix_list = reshape(trajectory_relu_matrix_list, (dim, len_trajectories * num_trajectories))
+    return unique(trajectory_relu_matrix_list, dims=2)
+end 
+
+
+"""
+Initialise pool of admissable Relu matrices for a specific shallow PLRNN by drawing trajectories and storing the visited regions
+shPLRNN, inplace 
+"""
 function construct_relu_matrix_pool_traj(A::Array, W₁::Array, W₂::Array, h₁::Array, h₂::Array, latent_dim::Integer, hidden_dim::Integer, PLRNN::ShallowPLRNN; num_trajectories::Integer = 10, len_trajectories::Integer = 100, search_space::Array = [-10, 10], initial_conditions::Array = [], type::Union{Type{Float32}, Type{Float64}} = eltype(A)) 
     # preallocate big arrays
     trajectory_relu_matrix_list = Array{Bool}(undef, hidden_dim, len_trajectories, num_trajectories) 
@@ -598,6 +629,28 @@ function get_latent_time_series!(trajectory::CuArray, time_steps::Integer, A::Cu
         trajectory[:, t] .= z 
     end
     return trajectory
+end
+
+"""
+Generate the time series (and according diagonals of relu matrices) by iteravely applying the ALRNN, inplace
+"""
+function get_latent_time_series!(trajectory::Array, relu_matrix_diagonals::Union{SubArray,Array}, time_steps::Integer,     
+    A::AbstractVector, W::AbstractMatrix, h::AbstractVector, num_relus::Integer,dim::Integer,
+    z_0::Union{Array, SubArray}, temp::Union{SubArray, Array})
+    
+    trajectory[:,1] .= z_0
+    @views temp .= trajectory[:,1] # use as temporary preallocated space
+    relu_matrix_diagonals[:,1] .= (temp .> 0)
+    relu_matrix_diagonals[1:dim-num_relus,1] .= 1 # first num_relus are always active
+    
+    @views for t = 2:time_steps 
+        trajectory[:,t] .= A .* trajectory[:,t-1] .+ W₁ * (relu_matrix_diagonals[:,t-1] .* temp) .+ h₁ 
+        temp .= trajectory[:,t] 
+        relu_matrix_diagonals[:,t] .= (temp .> 0)
+        relu_matrix_diagonals[1:dim-num_relus,t] .= 1 # first num_relus are always active
+    end
+
+    return trajectory, relu_matrix_diagonals
 end
 
 

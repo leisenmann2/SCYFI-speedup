@@ -94,6 +94,7 @@ ALRNN
 """
 function find_cycles(
     A::Array, W::Array, h::Array, num_relus::Integer, order::Integer;
+    get_pool_from_traj::Bool = false,
     outer_loop_iterations::Union{Integer,Nothing} = nothing,
     inner_loop_iterations::Union{Integer,Nothing} = nothing,
     PLRNN::ALRNN = ALRNN()
@@ -123,9 +124,15 @@ function find_cycles(
         inplace_h = Array{type}(undef, (dim, dim)) 
         inplace_z = Array{type}(undef, (dim, dim))
         inplace_temp = Array{type}(undef, (dim, dim))
+        if get_pool_from_traj 
+            relu_pool = construct_relu_matrix_pool_traj(A, W, h,num_relus, dim, PLRNN; num_trajectories = num_trajectories, len_trajectories=len_trajectories, search_space = search_space, initial_conditions = initial_conditions, type = type)
+            println("Number of initialisations in Pool from Trajectory: ", size(relu_pool)[2])
+        else
+                relu_pool=nothing
+        end
 
         for i = 1:order
-            scy_fi!(found_lower_orders, found_eigvals, A, W, h, num_relus, i, z_candidate, inplace_z, inplace_h, inplace_temp,PLRNN; outer_loop_iterations = outer_loop_iterations, inner_loop_iterations = inner_loop_iterations, dim = dim, type = type)
+            scy_fi!(found_lower_orders, found_eigvals, A, W, h, num_relus, i, z_candidate, inplace_z, inplace_h, inplace_temp,PLRNN; relu_pool=relu_pool, outer_loop_iterations = outer_loop_iterations, inner_loop_iterations = inner_loop_iterations, dim = dim, type = type)
         end
     end
 
@@ -139,6 +146,7 @@ calculate the cycles for a specified PLRNN with parameters A,W,h for order k in 
 """
 function find_cycles(
     A:: Array, W:: Array, h:: Array, num_relus::Integer, orders::Array;
+    get_pool_from_traj::Bool = false,
     outer_loop_iterations:: Union{Integer,Nothing}= nothing,
     inner_loop_iterations:: Union{Integer,Nothing} = nothing,
     PLRNN::ALRNN = ALRNN()
@@ -168,9 +176,15 @@ function find_cycles(
         inplace_h = Array{type}(undef, (dim, dim)) 
         inplace_z = Array{type}(undef, (dim, dim))
         inplace_temp = Array{type}(undef, (dim, dim))
+        if get_pool_from_traj 
+                relu_pool = construct_relu_matrix_pool_traj(A, W, h,num_relus, dim, PLRNN; num_trajectories = num_trajectories, len_trajectories=len_trajectories, search_space = search_space, initial_conditions = initial_conditions, type = type)
+                println("Number of initialisations in Pool from Trajectory: ", size(relu_pool)[2])
+        else
+                relu_pool=nothing
+        end
 
         for i = orders
-            scy_fi!(found_lower_orders, found_eigvals, A, W, h, num_relus, i, z_candidate, inplace_z, inplace_h, inplace_temp; outer_loop_iterations = outer_loop_iterations, inner_loop_iterations = inner_loop_iterations, dim = dim, type = type)
+            scy_fi!(found_lower_orders, found_eigvals, A, W, h, num_relus, i, z_candidate, inplace_z, inplace_h, inplace_temp,PLRNN; relu_pool=relu_pool, outer_loop_iterations = outer_loop_iterations, inner_loop_iterations = inner_loop_iterations, dim = dim, type = type)
         end
     end
 
