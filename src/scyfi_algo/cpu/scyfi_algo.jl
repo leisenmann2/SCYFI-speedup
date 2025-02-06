@@ -11,7 +11,7 @@ inplace version
 function scy_fi!(found_cycles::Array, found_eigvals::Array, 
     A::Array, W::Array, h::Array, order::Integer,
     z_candidate::Array, inplace_z::Array, inplace_h::Array, inplace_temp::Array;
-    relu_pool::Union{Array, Nothing},
+    relu_pool::Union{Array, Nothing}=nothing,
     outer_loop_iterations::Union{Integer,Nothing} = nothing,
     inner_loop_iterations::Union{Integer,Nothing} = nothing, 
     PLRNN::VanillaPLRNN = VanillaPLRNN(),

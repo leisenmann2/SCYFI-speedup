@@ -590,6 +590,20 @@ function get_latent_time_series!(trajectory::Array, time_steps::Integer, A::Arra
     return trajectory
 end
 
+"""
+Generate the time series by iteravely applying the PLRNN
+inplace, plrnn, cpu
+"""
+function get_latent_time_series(time_steps::Integer, A::Array, W::Array, h::Array, z::Array)
+    trajectory = Array{Array}(undef, time_steps)
+    trajectory[1] = z
+    for t = 2:time_steps
+        z=latent_step(z, A, W, h) # z = A * z .+ W * max.(0,z) .+ h
+        trajectory[t] = z
+    end
+    return trajectory
+end
+
 
 """
 Generate the time series by iteravely applying the PLRNN
@@ -613,6 +627,16 @@ function get_latent_time_series!(trajectory::Array, time_steps::Integer, A::Arra
     for t = 2:time_steps
         latent_step!(z, A, W, h, num_relus) # z = A * z .+ W * max.(0,z) .+ h
         trajectory[:, t] .= z
+    end
+    return trajectory
+end
+
+function get_latent_time_series(time_steps::Integer, A::Array, W::Array, h::Array, num_relus::Integer, z::AbstractVector)
+    trajectory = Array{Array}(undef, time_steps)
+    trajectory[1] = z
+    for t = 2:time_steps
+        z=latent_step(z, A, W, h, num_relus) # z = A * z .+ W * max.(0,z) .+ h
+        trajectory[t] = z
     end
     return trajectory
 end
@@ -779,6 +803,9 @@ inplace, cpu
 function latent_step!(z::Union{SubArray, Array}, A::Array, W::Array, h::Array)
     z .= A * z .+ W * max.(0,z) .+ h
 end
+function latent_step(z::Union{SubArray, Array}, A::Array, W::Array, h::Array)
+    return A * z .+ W * max.(0,z) .+ h
+end
 
 
 """
@@ -790,11 +817,14 @@ function latent_step!(z::CuArray, A::CuArray, W::CuArray, h::CuArray)
 end
 
 """
-PLRNN step
+ALRNN step
 inplace, cpu
 """
 function latent_step!(z::Union{SubArray, Array}, A::Array, W::Array, h::Array, num_relus::Integer)
     z .= A * z .+ W * vcat(z[1:end-num_relus,:], max.(0,z)[end-(num_relus-1):end,:]) .+ h
+end
+function latent_step(z::AbstractArray, A::AbstractMatrix, W::AbstractMatrix, h::AbstractVector, num_relus::Integer)
+    return A * z + W * vcat(z[1:end-num_relus,:], max.(0,z)[end-(num_relus-1):end,:]) + h
 end
 
 
