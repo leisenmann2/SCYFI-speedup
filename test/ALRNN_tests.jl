@@ -52,9 +52,55 @@ function test_finding_8_cycle_2D()
     #println(traj)
 end
 
+function test_finding_1_cycle_2D_parallel()
+    # define variables for GT sys with 1 cycle if
+    a2 = 0.09325784994952224
+    a1 = 0.3683894917319025
+    w1 = 0.42445515140482515
+    w2 = 0.40337929998957267
+    h1 = 0.30087210680425625
+    h2 = 0.1416512363454716
+    A = [a1 0; 0 a2]
+    W = [0 w1; w2 0]
+    h = [h1, h2]
+    dz = 2
+    k = 1
+    
+    # Set number of threads to 2 for testing
+    old_threads = Threads.nthreads()
+    ENV["JULIA_NUM_THREADS"] = "2"
+    
+    FPs,eigenvals = find_cycles(A, W, h, 1, k, outer_loop_iterations=10, inner_loop_iterations=20, PLRNN=ALRNN())
+    
+    # Reset threads to original value
+    ENV["JULIA_NUM_THREADS"] = string(old_threads)
+    
+    @test length(FPs[1][1]) == 1
+end
+function test_finding_1_cycle_2D_low_rank()
+    # define variables for GT sys with 1 cycle if
+    a2 = 0.09325784994952224
+    a1 = 0.3683894917319025
+    w1 = 0.42445515140482515
+    w2 = 0.40337929998957267
+    h1 = 0.30087210680425625
+    h2 = 0.1416512363454716
+    A = [a1 0; 0 a2]
+    W = [0 w1; w2 0]
+    h = [h1, h2]
+    dz = 2
+    k = 1
+    
+    FPs,eigenvals = find_cycles(A, W, h, 1, k, outer_loop_iterations=10, inner_loop_iterations=20, PLRNN=ALRNN(), low_rank=true)
+    
+    @test length(FPs[1][1]) == 1
+end
+
 test_finding_1_cycle_2D()
 test_finding_2_cycle_2D()
 test_finding_8_cycle_2D()
+test_finding_1_cycle_2D_parallel()
+test_finding_1_cycle_2D_low_rank()
 
 # for i = 1:50
 #     AW=randn(2,2)

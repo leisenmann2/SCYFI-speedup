@@ -869,3 +869,77 @@ function set_loop_iterations(order:: Integer, outer_loop:: Union{Integer,Nothing
     end
     return outer_loop, inner_loop
 end
+
+
+"""
+Find intersections of low rank base with subregions.
+
+Args:
+    a: Array of shape (R,) decay
+    V: Array of shape (R,N) scaled left singular vectors
+    U: Array of shape (N,R) right singular vectors
+    hz: Array of shape (R,) latent bias (assumed to be substracted!)
+    h: Array of shape (N,) neuron bias
+
+Returns:
+    D_list: Array of shape (n_Ds,N) containing all subspaces
+    n_inverses: number of inverses
+"""
+function find_subregion_intersections(a::Vector{T}, V::Matrix{T}, U::Matrix{T}, hz::Vector{T}, h::Vector{T}) where T <: AbstractFloat
+    N, R = size(U)
+    n_inverses = 0
+
+    # Get all R-combinations of N indices
+    intersect_inds = collect(combinations(1:N, R))
+    
+    # Handle parallel lines for 2D case
+    if R == 2
+        ni = N ÷ 2
+        filter!(inds -> !(inds[1] == inds[2] + ni || inds[2] == inds[1] + ni), intersect_inds)
+    end
+
+    # Pre-calculate number of subspaces
+    n_powerset = 2^R  # Length of powerset for R elements
+    n_Ds_initial = n_powerset * length(intersect_inds)
+    
+    # Preallocate output array
+    D_list = falses(n_Ds_initial, N)
+    it = 1
+
+    # Temporary arrays for calculations
+    z = Vector{T}(undef, R)
+    x = Vector{T}(undef, N)
+    
+    for inds in intersect_inds
+        # Extract relevant submatrices
+        b_hat = view(h, inds)
+        U_hat = view(U, inds, :)
+        
+        # Solve linear system
+        n_inverses += 1
+        z = U_hat \ b_hat
+        
+        # Calculate x = U * z - h
+        mul!(x, U, z)
+        x .-= h
+        
+        # Create initial D vector
+        D_init = x .> 0
+        D_init[inds] .= false
+        D_list[it, :] = D_init
+        it += 1
+
+        # Generate all subsets of intersection indices (except empty set)
+        for D_ind in Iterators.drop(powerset(inds), 1)
+            D = copy(D_init)
+            D[collect(D_ind)] .= true
+            D_list[it, :] = D
+            it += 1
+        end
+    end
+
+    # Remove duplicate subspaces
+    unique_D = unique(D_list[1:it-1, :], dims=1)
+    
+    return unique_D, n_inverses
+end

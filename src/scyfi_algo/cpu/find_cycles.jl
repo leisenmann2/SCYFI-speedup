@@ -91,13 +91,15 @@ end
 """ 
 calculate the cycles for a specified PLRNN with parameters A,W,h up until order k
 ALRNN
+add the low rank initialisation as an option
 """
 function find_cycles(
     A::Array, W::Array, h::Array, num_relus::Integer, order::Integer;
     get_pool_from_traj::Bool = false,
     outer_loop_iterations::Union{Integer,Nothing} = nothing,
     inner_loop_iterations::Union{Integer,Nothing} = nothing,
-    PLRNN::ALRNN = ALRNN()
+    PLRNN::ALRNN = ALRNN(),
+    low_rank::Bool = false
     )
     
     found_lower_orders = Array[]
@@ -107,32 +109,47 @@ function find_cycles(
 
     if Threads.nthreads() > 1
         println("multi-thread parallel version")
-        n_threads= Threads.nthreads()
-
+        n_threads = Threads.nthreads()
+        
         # pre-allocate for each thread for in-place version of SCYFI computations 
         z_candidates = Array{type}(undef, dim, n_threads)
         inplace_hs = Array{type}(undef, (dim, dim, n_threads)) 
         inplace_zs = Array{type}(undef, (dim, dim, n_threads))
         inplace_temps = Array{type}(undef, (dim, dim, n_threads))
 
+        # Initialize relu_pool based on options
+        if low_rank
+            relu_pool = find_subregion_intersections(A, W, h, num_relus, dim, type)
+            println("Number of initialisations from low-rank intersections: ", size(relu_pool)[2])
+        elseif get_pool_from_traj
+            relu_pool = construct_relu_matrix_pool_traj(A, W, h, num_relus, dim, PLRNN)
+            println("Number of initialisations in Pool from Trajectory: ", size(relu_pool)[2])
+        else
+            relu_pool = nothing
+        end
+
         for i = 1:order
-            scy_fi!(found_lower_orders, found_eigvals, A, W, h, num_relus, i, n_threads, z_candidates, inplace_zs, inplace_hs, inplace_temps; outer_loop_iterations = outer_loop_iterations, inner_loop_iterations = inner_loop_iterations, dim = dim, type = type)
+            scy_fi!(found_lower_orders, found_eigvals, A, W, h, num_relus, i, n_threads, z_candidates, inplace_zs, inplace_hs, inplace_temps, relu_pool; outer_loop_iterations = outer_loop_iterations, inner_loop_iterations = inner_loop_iterations, dim = dim, type = type)
         end
     else
-        # pre-allocate for in-place version of SCYFI computations
+        # Single thread code as in your previous implementation
         z_candidate = Array{type}(undef, dim)
         inplace_h = Array{type}(undef, (dim, dim)) 
         inplace_z = Array{type}(undef, (dim, dim))
         inplace_temp = Array{type}(undef, (dim, dim))
-        if get_pool_from_traj 
-            relu_pool = construct_relu_matrix_pool_traj(A, W, h,num_relus, dim, PLRNN; num_trajectories = num_trajectories, len_trajectories=len_trajectories, search_space = search_space, initial_conditions = initial_conditions, type = type)
+
+        if low_rank
+            relu_pool = find_subregion_intersections(A, W, h, num_relus, dim, type)
+            println("Number of initialisations from low-rank intersections: ", size(relu_pool)[2])
+        elseif get_pool_from_traj
+            relu_pool = construct_relu_matrix_pool_traj(A, W, h, num_relus, dim, PLRNN)
             println("Number of initialisations in Pool from Trajectory: ", size(relu_pool)[2])
         else
-                relu_pool=nothing
+            relu_pool = nothing
         end
 
         for i = 1:order
-            scy_fi!(found_lower_orders, found_eigvals, A, W, h, num_relus, i, z_candidate, inplace_z, inplace_h, inplace_temp,PLRNN; relu_pool=relu_pool, outer_loop_iterations = outer_loop_iterations, inner_loop_iterations = inner_loop_iterations, dim = dim, type = type)
+            scy_fi!(found_lower_orders, found_eigvals, A, W, h, num_relus, i, z_candidate, inplace_z, inplace_h, inplace_temp, PLRNN; relu_pool=relu_pool, outer_loop_iterations = outer_loop_iterations, inner_loop_iterations = inner_loop_iterations, dim = dim, type = type)
         end
     end
 
@@ -249,7 +266,7 @@ function find_cycles(
         for i = 1:order
             scy_fi!(found_lower_orders, found_eigvals, A, W₁, W₂, h₁, h₂, i, n_threads, relu_pool, PLRNN, z_candidates, inplace_zs, inplace_h₁s, inplace_h₂s, inplace_temp_1s, inplace_temp_2s; temp_3s = inplace_temp_3s, outer_loop_iterations = outer_loop_iterations, inner_loop_iterations = inner_loop_iterations, latent_dim = latent_dim, hidden_dim = hidden_dim, type = type) 
         end
-    else 
+    else
         # pre-allocate for in-place version of SCYFI computations
         z_candidate = Array{type}(undef, latent_dim)
         inplace_h₁ = Array{type}(undef, (latent_dim, latent_dim)) 

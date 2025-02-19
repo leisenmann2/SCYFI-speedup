@@ -27,7 +27,8 @@ function find_cycles(
     outer_loop_iterations::Union{Integer,Nothing} = nothing,
     inner_loop_iterations::Union{Integer,Nothing} = nothing,
     PLRNN::ALRNN = ALRNN(),
-    gpu_version::Bool = CUDA.functional() && size(A)[1] >= 300
+    gpu_version::Bool = CUDA.functional() && size(A)[1] >= 300,
+    low_rank::Bool = false
     )
 
     if gpu_version # use gpu 
@@ -36,7 +37,7 @@ function find_cycles(
         println("Not implemented yet")
     else # use purely cpu version
         println("cpu version")
-        SCYFI_cpu.find_cycles(A, W, h, num_relus, order; get_pool_from_traj=get_pool_from_traj,PLRNN = PLRNN, outer_loop_iterations = outer_loop_iterations, inner_loop_iterations = inner_loop_iterations)
+        SCYFI_cpu.find_cycles(A, W, h, num_relus, order; get_pool_from_traj=get_pool_from_traj,PLRNN = PLRNN, outer_loop_iterations = outer_loop_iterations, inner_loop_iterations = inner_loop_iterations, low_rank=low_rank)
     end
 end
 

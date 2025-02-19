@@ -232,5 +232,57 @@ function scy_fi!(
     end
 end
 
+"""
+ALRNN version
+"""
+function scy_fi!(found_cycles::Array, found_eigvals::Array, 
+    A::Array, W::Array, h::Array, num_relus::Integer, order::Integer, n_threads::Integer, 
+    z_candidates::Array, inplace_zs::Array, inplace_hs::Array, inplace_temps::Array,
+    relu_pool::Union{Array, Nothing} = nothing;
+    outer_loop_iterations::Union{Integer, Nothing} = nothing,
+    inner_loop_iterations::Union{Integer, Nothing} = nothing,
+    PLRNN::ALRNN = ALRNN(),
+    dim::Integer = size(A)[1], type::Union{Type{Float32}, Type{Float64}} = eltype(A)
+    )
+    
+    push!(found_cycles, Array[])
+    push!(found_eigvals, Array[])
+    outer_loop_iterations, inner_loop_iterations = set_loop_iterations(order, outer_loop_iterations, inner_loop_iterations)
 
+    # Do the multithreading over the initializations
+    lk = ReentrantLock()
+    Threads.@threads for thread_id = 1:n_threads
+        # pre-allocate big arrays for each thread
+        relu_matrix_diagonals = Array{Bool}(undef, (dim, order))
+        trajectory_matrix = Array{type}(undef, (dim, order))
+        trajectory_relu_matrix_diagonals = Array{Bool}(undef, (dim, order))
+        
+        # create views on pre-allocated arrays for each thread
+        z_candidate = view(z_candidates, :, thread_id)
+        inplace_h = view(inplace_hs, :, :, thread_id)
+        inplace_z = view(inplace_zs, :, :, thread_id)
+        inplace_temp = view(inplace_temps, :, :, thread_id)
 
+        i = -1
+        while i < outer_loop_iterations
+            i += 1
+            construct_relu_matrix_diagonals!(relu_matrix_diagonals, relu_pool, order)
+            c = 0
+            while c < inner_loop_iterations
+                c += 1
+                if get_cycle_point_candidate!(z_candidate, A, W, h, num_relus, relu_matrix_diagonals, order, inplace_z, inplace_h, inplace_temp)
+                    # get trajectory & relu matrices of the candidate
+                    get_latent_time_series!(trajectory_matrix, trajectory_relu_matrix_diagonals, order, A, W, h, num_relus, dim, z_candidate)
+                    
+                    # check if trajectory is a cycle
+                    if check_cycle!(trajectory_matrix, trajectory_relu_matrix_diagonals, relu_matrix_diagonals, order)
+                        lock(lk) do
+                            push!(found_cycles[end], trajectory_matrix[:, 1:order])
+                            push!(found_eigvals[end], compute_cycle_eigenvalues(A, W, trajectory_relu_matrix_diagonals, order))
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
