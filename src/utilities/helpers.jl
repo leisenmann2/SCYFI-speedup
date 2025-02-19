@@ -1,4 +1,3 @@
-
 using JuMP
 using HiGHS
 
@@ -1045,7 +1044,7 @@ function enumerate_regions_ignore_degenerate(B::Matrix{T}, z0::Vector{T}, eps::T
     
     # Convert to Bool matrix where each column is a pattern
     n_patterns = length(patterns)
-    relu_pool = falses(n, n_patterns)
+    relu_pool = Array{Bool}(falses(n, n_patterns))  # Changed from BitMatrix to Array{Bool}
     for (j, pattern) in enumerate(patterns)
         relu_pool[:, j] .= Bool.(pattern)
     end

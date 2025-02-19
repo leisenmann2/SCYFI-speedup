@@ -99,7 +99,8 @@ function find_cycles(
     outer_loop_iterations::Union{Integer,Nothing} = nothing,
     inner_loop_iterations::Union{Integer,Nothing} = nothing,
     PLRNN::ALRNN = ALRNN(),
-    low_rank::Bool = false
+    low_rank::Bool = false,
+    U=nothing
     )
     
     found_lower_orders = Array[]
@@ -119,7 +120,10 @@ function find_cycles(
 
         # Initialize relu_pool based on options
         if low_rank
-            relu_pool = find_subregion_intersections(A, W, h, num_relus, dim, type)
+            if U == nothing
+                error("U must be provided if low_rank is true")
+            end
+            relu_pool = enumerate_regions_ignore_degenerate(U,h)  #(A, W, h, num_relus, dim, type)
             println("Number of initialisations from low-rank intersections: ", size(relu_pool)[2])
         elseif get_pool_from_traj
             relu_pool = construct_relu_matrix_pool_traj(A, W, h, num_relus, dim, PLRNN)
@@ -139,7 +143,10 @@ function find_cycles(
         inplace_temp = Array{type}(undef, (dim, dim))
 
         if low_rank
-            relu_pool = find_subregion_intersections(A, W, h, num_relus, dim, type)
+            if U == nothing
+                error("U must be provided if low_rank is true")
+            end
+            relu_pool = enumerate_regions_ignore_degenerate(U,h) 
             println("Number of initialisations from low-rank intersections: ", size(relu_pool)[2])
         elseif get_pool_from_traj
             relu_pool = construct_relu_matrix_pool_traj(A, W, h, num_relus, dim, PLRNN)

@@ -28,7 +28,8 @@ export detect_nan_or_inf,
     VanillaPLRNN,
     ShallowPLRNN,
     ALRNN,
-    ClippedShallowPLRNN
+    ClippedShallowPLRNN,
+    enumerate_regions_ignore_degenerate
 
 include("PLRNNS.jl")
 include("helpers.jl")

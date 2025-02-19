@@ -86,12 +86,14 @@ function test_finding_1_cycle_2D_low_rank()
     h1 = 0.30087210680425625
     h2 = 0.1416512363454716
     A = [a1 0; 0 a2]
-    W = [0 w1; w2 0]
+    U=[1. 1.]
+    V=[1. 1.]
+    W = V*U'
     h = [h1, h2]
     dz = 2
     k = 1
     
-    FPs,eigenvals = find_cycles(A, W, h, 1, k, outer_loop_iterations=10, inner_loop_iterations=20, PLRNN=ALRNN(), low_rank=true)
+    FPs,eigenvals = find_cycles(A, W, h, 1, k, outer_loop_iterations=10, inner_loop_iterations=20, PLRNN=ALRNN(), low_rank=true,U=U)
     
     @test length(FPs[1][1]) == 1
 end
