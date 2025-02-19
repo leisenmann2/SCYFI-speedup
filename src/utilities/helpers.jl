@@ -1,3 +1,8 @@
+
+using JuMP
+using HiGHS
+
+
 """
 Helper function to detect nan or inf values in array (CPU)
 """
@@ -942,4 +947,108 @@ function find_subregion_intersections(a::Vector{T}, V::Matrix{T}, U::Matrix{T}, 
     unique_D = unique(D_list[1:it-1, :], dims=1)
     
     return unique_D, n_inverses
+end
+
+
+"""
+Check feasibility of a set of linear inequalities induced by ReLU thresholds.
+"""
+function is_feasible(B::Matrix{T}, z0::Vector{T}, constraints::Vector{Tuple{Int,Int}}, eps::T=1e-6) where T <: AbstractFloat
+    n, r = size(B)
+    
+    # Setup optimization problem
+    model = Model(HiGHS.Optimizer)
+    set_silent(model)
+    
+    # Decision variables (xi in R^r)
+    @variable(model, xi[1:r])
+    
+    # Add constraints for each non-degenerate coordinate
+    for (i, s) in constraints
+        # Skip degenerate coordinates
+        if all(abs.(B[i, :]) .< eps) && abs(z0[i]) < eps
+            continue
+        end
+        
+        if s == 1
+            # z0[i] + B[i,:]·xi >= eps
+            @constraint(model, dot(B[i,:], xi) >= eps - z0[i])
+        elseif s == 0
+            # z0[i] + B[i,:]·xi <= -eps
+            @constraint(model, dot(B[i,:], xi) <= -eps - z0[i])
+        else
+            error("Sign s must be either 1 (active) or 0 (inactive).")
+        end
+    end
+    
+    # Solve feasibility problem
+    @objective(model, Min, 0)
+    optimize!(model)
+    
+    return termination_status(model) == OPTIMAL
+end
+
+"""
+Recursively enumerate all feasible sign patterns.
+"""
+function enumerate_regions_fixed(B::Matrix{T}, z0::Vector{T}, deg_mask::Vector{Bool}, 
+                               index::Int=1, current_pattern::Union{Nothing,Vector{Int}}=nothing, 
+                               eps::T=1e-6) where T <: AbstractFloat
+    n = size(B, 1)
+    
+    if isnothing(current_pattern)
+        current_pattern = Int[]
+    end
+    
+    # Base case: if all coordinates have been assigned, return the pattern
+    if index > n
+        return [current_pattern]  # Return as Vector instead of Tuple
+    end
+    
+    regions = Vector{Vector{Int}}()  # Changed to store Vectors instead of Tuples
+    
+    # If current coordinate is degenerate, force it to be 0
+    if deg_mask[index]
+        forced_pattern = [current_pattern; 0]
+        append!(regions, enumerate_regions_fixed(B, z0, deg_mask, index+1, forced_pattern, eps))
+    else
+        # Try assigning coordinate 'index' as active (1)
+        pattern_plus = [current_pattern; 1]
+        constraints = collect(enumerate(pattern_plus))
+        if is_feasible(B, z0, constraints, eps)
+            append!(regions, enumerate_regions_fixed(B, z0, deg_mask, index+1, pattern_plus, eps))
+        end
+        
+        # Try assigning coordinate 'index' as inactive (0)
+        pattern_minus = [current_pattern; 0]
+        constraints = collect(enumerate(pattern_minus))
+        if is_feasible(B, z0, constraints, eps)
+            append!(regions, enumerate_regions_fixed(B, z0, deg_mask, index+1, pattern_minus, eps))
+        end
+    end
+    
+    return regions
+end
+
+"""
+Compute degeneracy mask and enumerate activation patterns.
+Returns a Bool matrix where each column represents a different ReLU pattern.
+"""
+function enumerate_regions_ignore_degenerate(B::Matrix{T}, z0::Vector{T}, eps::T=1e-6) where T <: AbstractFloat
+    n = size(B, 1)
+    
+    # Compute degeneracy mask
+    deg_mask = [all(abs.(B[i, :]) .< eps) && abs(z0[i]) < eps for i in 1:n]
+    
+    # Enumerate patterns
+    patterns = enumerate_regions_fixed(B, z0, deg_mask, 1, nothing, eps)
+    
+    # Convert to Bool matrix where each column is a pattern
+    n_patterns = length(patterns)
+    relu_pool = falses(n, n_patterns)
+    for (j, pattern) in enumerate(patterns)
+        relu_pool[:, j] .= Bool.(pattern)
+    end
+    
+    return relu_pool
 end

@@ -191,10 +191,10 @@ function python_find_subregion_intersections(B, h)
         n = B.shape[0]
         deg_mask = [np.allclose(B[i, :], 0, atol=eps) and np.abs(z0[i]) < eps for i in range(n)]
         patterns = enumerate_regions_fixed(B, z0, deg_mask, eps=eps)
-        return patterns, deg_mask
+        return [np.array(pattern) for pattern in patterns], deg_mask
 
     """
-    return py"enumerate_regions_ignore_degenerate"(a, V, U, hz, h)
+    return py"enumerate_regions_ignore_degenerate"(B, h)
 end
 
 # @testset "Low Rank Helpers Tests" begin
@@ -272,103 +272,153 @@ end
         hz = zeros(R)
         h = zeros(N)
 
-        D_list, _ =  python_find_subregion_intersections_og(a, V, U, hz, h)
+        D_list, _ = python_find_subregion_intersections(U, h)
+        D_list = Bool.(hcat(D_list...))
+        julia_D_list = enumerate_regions_ignore_degenerate(U, h)
         
-        # Expect 2 valid patterns: [0,0] and [1,1]
-        @test size(D_list, 1) == 2
-        @test any(all(D_list .== [0 0], dims=2))
-        @test any(all(D_list .== [1 1], dims=2))
+        # Test Python implementation (original test)
+        @test size(D_list, 2) == 2
+        @test any(all(D_list .== [0 0], dims=1))
+        @test any(all(D_list .== [1 1], dims=1))
+
+        # Test Julia implementation matches Python
+        @test size(julia_D_list, 2) == size(D_list, 1)  # Julia has patterns as columns
+        @test any(all(julia_D_list .== [0,0], dims=1))
+        @test any(all(julia_D_list .== [1,1], dims=1))
     end
 
-    # @testset "3D Example with Rank 2" begin
-    #     N, R = 3, 2
-    #     a = [1.0, 1.0]
-    #     V = [1.0 0.0 0.0; 0.0 1.0 0.0]  # 2×3 matrix
-    #     U = [1.0 0.0; 0.0 1.0; 0.0 0.0]  # 3×2 matrix
-    #     hz = [0.0, 0.0]
-    #     h = [0.0, 0.0, 0.0]
+    @testset "3D Example with Rank 2" begin
+        N, R = 3, 2
+        a = [1.0, 1.0]
+        V = [1.0 0.0 1.0; 0.0 1.0 0.0]  # 2×3 matrix
+        U = [1.0 1.0; 0.0 1.0; 1.0 0.0]  # 3×2 matrix
+        W = inv(U'*U) * U' * U * V
+        hz = [0.0, 0.0]
+        h = [0.0, 0.0, 0.0]
 
-    #     D_list, _ = python_find_subregion_intersections_og(a, V, U, hz, h)
+        D_list, _ = python_find_subregion_intersections(U, h)
+        D_list = Bool.(hcat(D_list...))
+        julia_D_list = enumerate_regions_ignore_degenerate(U, h)
         
-    #     # Should find 4 regions in x-y plane
-    #     @test size(D_list, 1) == 4
-    #     @test all(D_list[:, 3] .== 0)  # Third neuron always off
-    #     @test Set(Tuple(row) for row in eachrow(D_list)) == Set([(0,0,0), (1,0,0), (0,1,0), (1,1,0)])
-    # end
-
-    # @testset "Unreachable Regions" begin
-    #     a = [1.0, 1.0]
-    #     V = [1.0 1.0 0.0 0.0; 0.0 0.0 1.0 1.0]
-    #     U = [1.0 0.0; 1.0 0.0; 0.0 1.0; 0.0 1.0]  # Explicit group structure
-    #     hz = [0.0, 0.0]
-    #     h = zeros(4)
-
-    #     D_list, _ = python_find_subregion_intersections_og(a, V, U, hz, h)
+        # Test number of patterns matches
+        @test size(julia_D_list, 2) == size(D_list, 2)
         
-    #     # Verify group constraints
-    #     for pattern in eachrow(D_list)
-    #         @test pattern[1] == pattern[2]  # First group
-    #         @test pattern[3] == pattern[4]  # Second group
-    #     end
+        # Convert to sets for pattern comparison
+        #py_patterns = Set([Tuple(row) for row in eachrow(D_list)])
+        #jl_patterns = Set([Tuple(col) for col in eachrow(julia_D_list)])
+        @test D_list == julia_D_list
+    end
+
+    @testset "Performance Comparison" begin
+        for (N, R) in [(10, 2), (20, 3)]
+            rng = Random.seed!(123)
+            U = randn(rng, N, R)
+            h = zeros(N)
+
+            # Benchmark both implementations
+            py_time = @elapsed python_find_subregion_intersections(U, h)
+            jl_time = @elapsed enumerate_regions_ignore_degenerate(U, h)
+
+            # Compare results
+            py_D_list, _ = python_find_subregion_intersections(U, h)
+            py_D_list = Bool.(hcat(py_D_list...))
+            julia_D_list = enumerate_regions_ignore_degenerate(U, h)
+
+            # Convert to sets for comparison
+            #py_patterns = Set([Tuple(row) for row in eachrow(py_D_list)])
+            #jl_patterns = Set([Tuple(col) for col in eachcol(julia_D_list)])
+            
+            # Test correctness and performance
+            @test py_D_list == julia_D_list
+            @test jl_time ≤ 2py_time
+            
+            @info "Performance for N=$N, R=$R" python_time=py_time julia_time=jl_time ratio=py_time/jl_time
+        end
+    end
+
+    @testset "Edge Cases" begin
+        # Test minimal case
+        N, R = 1, 1
+        U = ones(N, R)
+        h = zeros(N)
         
-    #     # Should find exactly 4 valid regions (2^2 groups)
-    #     @test size(D_list, 1) == 4
-    # end
-
-    # @testset "Numerical Stability" begin
-    #     N, R = 5, 2
-    #     a = [1.0, 1.0]
-    #     rng = Random.seed!(123)
+        py_D_list, _ = python_find_subregion_intersections(U, h)
+        py_D_list = Bool.(hcat(py_D_list...))
+        julia_D_list = enumerate_regions_ignore_degenerate(U, h)
         
-    #     # Create nearly singular V*U to test numerical stability
-    #     V = [1.0 1.0+1e-10 0.0 0.0 0.0; 0.0 0.0 1.0 1.0 1.0]
-    #     U = randn(rng, N, R)
-    #     hz = zeros(R)
-    #     h = zeros(N)
-
-    #     # Should not throw and should return valid patterns
-    #     D_list, _ = python_find_subregion_intersections_og(a, V, U, hz, h)
-    #     @test all(x -> x in [0,1], D_list)  # All entries should be binary
-    # end
-end 
-
-
-N, R = 2, 1
-a = [1.0]
-V = reshape([1.0, 1.0], R, N)  # Make sure V is R×N (1×2)
-U = reshape([1.0, 1.0], N, R)  # Make sure U is N×R (2×1)
-V*U
-W = inv(U'*U) * U' * U * V
-hz = zeros(R)
-h = [0.1,0.]#zeros(N)
-
-D_list, _ =  python_find_subregion_intersections_og(a, V, U, hz, h)
-
-# Expect 2 valid patterns: [0,0] and [1,1]
-@test size(D_list, 1) == 2
-@test any(all(D_list .== [0 0], dims=2))
-@test any(all(D_list .== [1 1], dims=2))
+        @test py_D_list == julia_D_list
+        
+        # Test degenerate case
+        N, R = 3, 2
+        U = zeros(N, R)
+        h = zeros(N)
+        
+        py_D_list, _ = python_find_subregion_intersections(U, h)
+        py_D_list = Bool.(hcat(py_D_list...))
+        julia_D_list = enumerate_regions_ignore_degenerate(U, h)
+        
+        @test py_D_list == julia_D_list
+    end
+end
 
 
+# N, R = 2, 1
+# a = [1.0]
+# V = reshape([1.0, 1.0], R, N)  # Make sure V is R×N (1×2)
+# U = reshape([1.0, 1.0], N, R)  # Make sure U is N×R (2×1)
+# W = inv(U'*U) * U' * U * V
+# hz = zeros(R)
+# h = zeros(N)
 
-N, R = 3, 2
-a = [1.0, 1.0]
-V = [1.0 0.0 1.0; 0.0 1.0 0.0]  # 2×3 matrix
-U = [1.0 1.0; 0.0 1.0; 1.0 0.0]  # 3×2 matrix
-W = inv(U'*U) * U' * U * V
-hz = [0.0, 0.0]
-h = [0.0, 0.0, 0.0]
+# D_list, _ = python_find_subregion_intersections(U, h)
+# D_list = Bool.(hcat(D_list...))
+# julia_D_list = enumerate_regions_ignore_degenerate(U, h)
 
-D_list, _ = python_find_subregion_intersections_og(a, V, U, hz, h)
+# # Test Python implementation (original test)
+# @test size(D_list, 1) == 2
+# @test any(all(D_list .== [0 0], dims=1))
+# @test any(all(D_list .== [1 1], dims=1))
 
-# Should find 4 regions in x-y plane
-@test size(D_list, 1) == 4
-@test all(D_list[:, 3] .== 0)  # Third neuron always off
-@test Set(Tuple(row) for row in eachrow(D_list)) == Set([(0,0,0), (1,0,0), (0,1,0), (1,1,0)])
+# # Test Julia implementation matches Python
+# @test size(julia_D_list, 2) == size(D_list, 1)  # Julia has patterns as columns
+# @test any(all(julia_D_list .== [0,0], dims=1))
+# @test any(all(julia_D_list .== [1,1], dims=1))
+# # N, R = 2, 1
+# a = [1.0]
+# V = reshape([1.0, 1.0], R, N)  # Make sure V is R×N (1×2)
+# U = reshape([1.0, 1.0], N, R)  # Make sure U is N×R (2×1)
+# V*U
+# W = inv(U'*U) * U' * U * V
+
+# h = [0.,0.]#zeros(N)
+
+# D_list, _ =  python_find_subregion_intersections(U, h)
+
+# # Expect 2 valid patterns: [0,0] and [1,1]
+# @test size(D_list, 1) == 2
+# @test any(all(D_list .== [0 0], dims=2))
+# @test any(all(D_list .== [1 1], dims=2))
 
 
-    #     N, R = 3, 2
-    #     a = [1.0, 1.0]
+
+# N, R = 3, 2
+# a = [1.0, 1.0]
+# V = [1.0 0.0 1.0; 0.0 1.0 0.0]  # 2×3 matrix
+# U = [1.0 1.0; 0.0 1.0; 1.0 0.0]  # 3×2 matrix
+# W = inv(U'*U) * U' * U * V
+# hz = [0.0, 0.0]
+# h = [0.0, 0.0, 0.0]
+
+# D_list, _ = python_find_subregion_intersections_og(a, V, U, hz, h)
+
+# # Should find 4 regions in x-y plane
+# @test size(D_list, 1) == 4
+# @test all(D_list[:, 3] .== 0)  # Third neuron always off
+# @test Set(Tuple(row) for row in eachrow(D_list)) == Set([(0,0,0), (1,0,0), (0,1,0), (1,1,0)])
+
+
+#     #     N, R = 3, 2
+#     #     a = [1.0, 1.0]
     #     V = [1.0 0.0 0.0; 0.0 1.0 0.0]  # 2×3 matrix
     #     U = [1.0 0.0; 0.0 1.0; 0.0 0.0]  # 3×2 matrix
     #     hz = [0.0, 0.0]
