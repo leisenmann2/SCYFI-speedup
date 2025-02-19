@@ -175,6 +175,10 @@ function python_find_subregion_intersections(B, h)
         return regions
 
     def enumerate_regions_ignore_degenerate(B, z0, eps=1e-6):
+        # Get dimensions
+        n, r = B.shape
+        num_relus = r  # number of ReLUs equals rank for ALRNN
+        non_relu_dims = n - num_relus  # number of non-ReLU dimensions
 
         # Compute a degeneracy mask and then enumerate activation patterns,
         # forcing any degenerate coordinate to be inactive (0).
@@ -271,19 +275,21 @@ end
         W = inv(U'*U) * U' * U * V
         hz = zeros(R)
         h = zeros(N)
+        num_relus = R
 
         D_list, _ = python_find_subregion_intersections(U, h)
         D_list = Bool.(hcat(D_list...))
-        julia_D_list = enumerate_regions_ignore_degenerate(U, h)
+        D_list[1:N - num_relus , :] .= true
+        julia_D_list = enumerate_regions_ignore_degenerate(U, h,num_relus)
         
         # Test Python implementation (original test)
         @test size(D_list, 2) == 2
-        @test any(all(D_list .== [0 0], dims=1))
-        @test any(all(D_list .== [1 1], dims=1))
+        @test any(all(D_list .== [1, 0], dims=1))
+        @test any(all(D_list .== [1, 1], dims=1))
 
         # Test Julia implementation matches Python
         @test size(julia_D_list, 2) == size(D_list, 1)  # Julia has patterns as columns
-        @test any(all(julia_D_list .== [0,0], dims=1))
+        @test any(all(julia_D_list .== [1,0], dims=1))
         @test any(all(julia_D_list .== [1,1], dims=1))
     end
 
@@ -295,10 +301,13 @@ end
         W = inv(U'*U) * U' * U * V
         hz = [0.0, 0.0]
         h = [0.0, 0.0, 0.0]
-
+        num_relus = R
         D_list, _ = python_find_subregion_intersections(U, h)
         D_list = Bool.(hcat(D_list...))
-        julia_D_list = enumerate_regions_ignore_degenerate(U, h)
+        D_list[1:N - num_relus, :] .= true
+       # unique patterns
+        D_list = unique(D_list, dims=2)
+        julia_D_list = enumerate_regions_ignore_degenerate(U, h,num_relus)
         
         # Test number of patterns matches
         @test size(julia_D_list, 2) == size(D_list, 2)
@@ -314,15 +323,17 @@ end
             rng = Random.seed!(123)
             U = randn(rng, N, R)
             h = zeros(N)
-
+            num_relus = R
             # Benchmark both implementations
             py_time = @elapsed python_find_subregion_intersections(U, h)
-            jl_time = @elapsed enumerate_regions_ignore_degenerate(U, h)
+            jl_time = @elapsed enumerate_regions_ignore_degenerate(U, h,num_relus)
 
             # Compare results
             py_D_list, _ = python_find_subregion_intersections(U, h)
             py_D_list = Bool.(hcat(py_D_list...))
-            julia_D_list = enumerate_regions_ignore_degenerate(U, h)
+            py_D_list[1:N - num_relus, :] .= true
+            py_D_list = unique(py_D_list, dims=2)
+            julia_D_list = enumerate_regions_ignore_degenerate(U, h,num_relus)
 
             # Convert to sets for comparison
             #py_patterns = Set([Tuple(row) for row in eachrow(py_D_list)])
@@ -341,10 +352,12 @@ end
         N, R = 1, 1
         U = ones(N, R)
         h = zeros(N)
-        
+        num_relus = R
         py_D_list, _ = python_find_subregion_intersections(U, h)
         py_D_list = Bool.(hcat(py_D_list...))
-        julia_D_list = enumerate_regions_ignore_degenerate(U, h)
+        py_D_list[1:N - num_relus, :] .= true
+        py_D_list = unique(py_D_list, dims=2)
+        julia_D_list = enumerate_regions_ignore_degenerate(U, h,num_relus)
         
         @test py_D_list == julia_D_list
         
@@ -355,25 +368,37 @@ end
         
         py_D_list, _ = python_find_subregion_intersections(U, h)
         py_D_list = Bool.(hcat(py_D_list...))
-        julia_D_list = enumerate_regions_ignore_degenerate(U, h)
+        py_D_list[1:N - num_relus, :] .= true
+        py_D_list = unique(py_D_list, dims=2)
+        julia_D_list = enumerate_regions_ignore_degenerate(U, h,num_relus)
         
         @test py_D_list == julia_D_list
     end
 end
 
 
-# N, R = 2, 1
-# a = [1.0]
-# V = reshape([1.0, 1.0], R, N)  # Make sure V is R×N (1×2)
-# U = reshape([1.0, 1.0], N, R)  # Make sure U is N×R (2×1)
-# W = inv(U'*U) * U' * U * V
-# hz = zeros(R)
-# h = zeros(N)
 
-# D_list, _ = python_find_subregion_intersections(U, h)
-# D_list = Bool.(hcat(D_list...))
-# julia_D_list = enumerate_regions_ignore_degenerate(U, h)
+#py_patterns = Set([Tuple(row) for row in eachrow(D_list)])
+#jl_patterns = Set([Tuple(col) for col in eachrow(julia_D_list)])
+@test D_list == julia_D_list
 
+# Test Python implementation (original test)
+@test size(D_list, 2) == 2
+@test any(all(D_list .== [1, 0], dims=1))
+@test any(all(D_list .== [1, 1], dims=1))
+
+# Test Julia implementation matches Python
+@test size(julia_D_list, 2) == size(D_list, 1)  # Julia has patterns as columns
+@test any(all(julia_D_list .== [1,0], dims=1))
+@test any(all(julia_D_list .== [1,1], dims=1))
+
+# Test number of patterns matches
+@test size(julia_D_list, 2) == size(D_list, 2)
+
+# Convert to sets for pattern comparison
+#py_patterns = Set([Tuple(row) for row in eachrow(D_list)])
+#jl_patterns = Set([Tuple(col) for col in eachrow(julia_D_list)])
+@test D_list == julia_D_list
 # # Test Python implementation (original test)
 # @test size(D_list, 1) == 2
 # @test any(all(D_list .== [0 0], dims=1))

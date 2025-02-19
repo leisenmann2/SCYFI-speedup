@@ -123,7 +123,7 @@ function find_cycles(
             if U == nothing
                 error("U must be provided if low_rank is true")
             end
-            relu_pool = enumerate_regions_ignore_degenerate(U,h)  #(A, W, h, num_relus, dim, type)
+            relu_pool = enumerate_regions_ignore_degenerate(U,h,num_relus)  #(A, W, h, num_relus, dim, type)
             println("Number of initialisations from low-rank intersections: ", size(relu_pool)[2])
         elseif get_pool_from_traj
             relu_pool = construct_relu_matrix_pool_traj(A, W, h, num_relus, dim, PLRNN)
@@ -146,7 +146,7 @@ function find_cycles(
             if U == nothing
                 error("U must be provided if low_rank is true")
             end
-            relu_pool = enumerate_regions_ignore_degenerate(U,h) 
+            relu_pool = enumerate_regions_ignore_degenerate(U,h,num_relus) 
             println("Number of initialisations from low-rank intersections: ", size(relu_pool)[2])
         elseif get_pool_from_traj
             relu_pool = construct_relu_matrix_pool_traj(A, W, h, num_relus, dim, PLRNN)

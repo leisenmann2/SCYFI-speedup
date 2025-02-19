@@ -1032,9 +1032,11 @@ end
 """
 Compute degeneracy mask and enumerate activation patterns.
 Returns a Bool matrix where each column represents a different ReLU pattern.
+For ALRNN, ensures non-ReLU neurons (first dim-num_relus) are always active.
 """
-function enumerate_regions_ignore_degenerate(B::Matrix{T}, z0::Vector{T}, eps::T=1e-6) where T <: AbstractFloat
-    n = size(B, 1)
+function enumerate_regions_ignore_degenerate(B::Matrix{T}, z0::Vector{T}, num_relus::Integer, eps::T=1e-6) where T <: AbstractFloat
+    n, r = size(B)
+    non_relu_dims = n - num_relus  # number of non-ReLU dimensions
     
     # Compute degeneracy mask
     deg_mask = [all(abs.(B[i, :]) .< eps) && abs(z0[i]) < eps for i in 1:n]
@@ -1044,10 +1046,19 @@ function enumerate_regions_ignore_degenerate(B::Matrix{T}, z0::Vector{T}, eps::T
     
     # Convert to Bool matrix where each column is a pattern
     n_patterns = length(patterns)
-    relu_pool = Array{Bool}(falses(n, n_patterns))  # Changed from BitMatrix to Array{Bool}
+    relu_pool = Array{Bool}(falses(n, n_patterns))
     for (j, pattern) in enumerate(patterns)
         relu_pool[:, j] .= Bool.(pattern)
     end
     
-    return relu_pool
+    # Force non-ReLU neurons to be active (1)
+    if non_relu_dims > 0
+        relu_pool[1:non_relu_dims, :] .= true
+    end
+    
+    # Remove duplicates after forcing non-ReLU neurons
+    unique_patterns = unique(eachcol(relu_pool))
+    final_pool = reduce(hcat, unique_patterns)
+    
+    return final_pool
 end
