@@ -147,10 +147,10 @@ shPLRNN, inplace
 """
 function construct_relu_matrix_pool_traj(A::Array, W::Array, h::Array, num_relus::Integer, dim::Integer, PLRNN::ALRNN; num_trajectories::Integer = 10, len_trajectories::Integer = 100, search_space::Array = [-10, 10], initial_conditions::Array = [], type::Union{Type{Float32}, Type{Float64}} = eltype(A)) 
     # preallocate big arrays
-    trajectory_relu_matrix_list = Array{Bool}(undef, hidden_dim, len_trajectories, num_trajectories) 
-    trajectory = Array{type}(undef, latent_dim, len_trajectories)
-    z_0 = Array{type}(undef, latent_dim)
-    temp = Array{type}(undef, hidden_dim)
+    trajectory_relu_matrix_list = Array{Bool}(undef, dim, len_trajectories, num_trajectories) 
+    trajectory = Array{type}(undef, dim, len_trajectories)
+    z_0 = Array{type}(undef, dim)
+    temp = Array{type}(undef, dim)
     n_0 = length(initial_conditions)
 
     # fill trajectory_relu_matrix_list uniformely from trajectories starting at given initial conditions
@@ -668,7 +668,7 @@ function get_latent_time_series!(trajectory::Array, relu_matrix_diagonals::Union
     relu_matrix_diagonals[1:dim-num_relus,1] .= 1 # first num_relus are always active
     
     @views for t = 2:time_steps 
-        trajectory[:,t] .= A .* trajectory[:,t-1] .+ W₁ * (relu_matrix_diagonals[:,t-1] .* temp) .+ h₁ 
+        trajectory[:,t] .= A .* trajectory[:,t-1] .+ W * (relu_matrix_diagonals[:,t-1] .* temp) .+ h
         temp .= trajectory[:,t] 
         relu_matrix_diagonals[:,t] .= (temp .> 0)
         relu_matrix_diagonals[1:dim-num_relus,t] .= 1 # first num_relus are always active
