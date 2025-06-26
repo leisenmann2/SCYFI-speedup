@@ -163,7 +163,7 @@ function construct_relu_matrix_pool_traj(A::Array, W::Array, h::Array, num_relus
     for i = (n_0 + 1):num_trajectories 
         rand!(z_0) # in [0, 1)
         z_0 .= z_0 .* (search_space[2] - search_space[1]) .+ search_space[1] # scale
-        get_latent_time_series!(trajectory, view(trajectory_relu_matrix_list, :, :, i), len_trajectories,  A, W, h, num_relus,dim, z_0, temp) 
+        get_latent_time_series!(trajectory, view(trajectory_relu_matrix_list, :, :, i), len_trajectories,  diag(A), W, h, num_relus,dim, z_0, temp) 
     end
 
     # return unique regions

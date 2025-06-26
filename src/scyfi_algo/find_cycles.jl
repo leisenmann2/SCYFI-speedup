@@ -24,6 +24,10 @@ calculate the cycles for a specified ALRNN with parameters A,W,h up until order 
 function find_cycles(
     A::Array, W::Array, h::Array, num_relus::Integer, order::Union{Integer, Array};
     get_pool_from_traj::Bool = false,
+    num_trajectories::Integer = 10,
+    len_trajectories::Integer = 100,
+    search_space::Array = [-10, 10],
+    initial_conditions::Array = [],
     outer_loop_iterations::Union{Integer,Nothing} = nothing,
     inner_loop_iterations::Union{Integer,Nothing} = nothing,
     PLRNN::ALRNN = ALRNN(),
@@ -36,7 +40,7 @@ function find_cycles(
         println("Not implemented yet")
     else # use purely cpu version
         println("cpu version")
-        SCYFI_cpu.find_cycles(A, W, h, num_relus, order; get_pool_from_traj=get_pool_from_traj,PLRNN = PLRNN, outer_loop_iterations = outer_loop_iterations, inner_loop_iterations = inner_loop_iterations)
+        SCYFI_cpu.find_cycles(A, W, h, num_relus, order; get_pool_from_traj=get_pool_from_traj,PLRNN = PLRNN, outer_loop_iterations = outer_loop_iterations, inner_loop_iterations = inner_loop_iterations,num_trajectories = num_trajectories, len_trajectories=len_trajectories, search_space = search_space, initial_conditions = initial_conditions)
     end
 end
 
