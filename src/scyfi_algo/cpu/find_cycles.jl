@@ -151,6 +151,10 @@ calculate the cycles for a specified PLRNN with parameters A,W,h for order k in 
 function find_cycles(
     A:: Array, W:: Array, h:: Array, num_relus::Integer, orders::Array;
     get_pool_from_traj::Bool = false,
+    num_trajectories::Integer = 10,
+    len_trajectories::Integer = 100,
+    search_space::Array = [-10, 10],
+    initial_conditions::Array = [],
     outer_loop_iterations:: Union{Integer,Nothing}= nothing,
     inner_loop_iterations:: Union{Integer,Nothing} = nothing,
     PLRNN::ALRNN = ALRNN()
